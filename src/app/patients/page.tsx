@@ -1,0 +1,235 @@
+'use client'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import DataTable from '@/components/DataTable';
+import { usePCMSStore } from '@/store/useStore';
+import api from '@/services/api';
+import { Plus, UserPlus, Filter, Download } from 'lucide-react';
+
+interface Patient {
+  _id: string;
+  patientId: string;
+  name: string;
+  phone: string;
+  age: number;
+  gender: string;
+  occupation: string;
+  branch?: { _id: string; name: string };
+  status: 'Critical' | 'Stable' | 'Recovering' | 'New Case';
+  lastVisit: string;
+}
+
+export default function PatientsPage() {
+  const router = useRouter();
+  const { selectedBranchId, allBranches, isLoading: storeLoading, showToast, setIsSyncing, showConfirm } = usePCMSStore();
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [localLoading, setLocalLoading] = useState(true);
+
+  // -------------------------------------------------------------------
+  // SYNC | Fetch Clinical Patient Registry
+  // -------------------------------------------------------------------
+  const fetchPatients = async () => {
+    setLocalLoading(true);
+    try {
+      const res = await api.get('/patients');
+      setPatients(res.data);
+    } catch (err) {
+      console.error('🚫 Registry Error | Failed to fetch clinic patients:', err);
+      showToast('Failed to load clinical registry', 'error');
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPatients();
+  }, [selectedBranchId]);
+
+  const handleDeletePatient = (patient: Patient) => {
+    showConfirm(
+      'Purge Patient Record',
+      `⚠️ WARNING: You are about to permanently purge the clinical record for ${patient.name}. This action cannot be undone. Continue?`,
+      async () => {
+        setIsSyncing(true);
+        try {
+          await api.delete(`/patients/${patient._id}`);
+          showToast('Patient record successfully purged from registry.', 'success');
+          fetchPatients();
+        } catch (err) {
+          console.error('🚫 Registry Error | Deletion failed:', err);
+          showToast('Failed to delete patient record. Ensure you have proper authorization.', 'error');
+        } finally {
+          setIsSyncing(false);
+        }
+      },
+      true
+    );
+  };
+
+  const columns = [
+    { 
+      header: 'ID', 
+      sortKey: 'patientId' as keyof Patient,
+      key: (p: Patient) => (
+        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>{p.patientId}</span>
+      )
+    },
+    { 
+      header: 'PATIENT NAME', 
+      sortKey: 'name' as keyof Patient,
+      key: (p: Patient) => (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.01em', fontSize: '0.9rem' }}>{p.name.toUpperCase()}</span>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>VERIFIED RECORD</span>
+        </div>
+      )
+    },
+    { 
+      header: 'CONTACT', 
+      key: (p: Patient) => (
+        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>{p.phone}</span>
+      )
+    },
+    {
+      header: 'AGE/GENDER',
+      sortKey: 'age' as keyof Patient,
+      key: (p: Patient) => (
+        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>{p.age}Y / {p.gender.toUpperCase()}</span>
+      )
+    },
+    {
+      header: 'BRANCH',
+      key: (p: Patient) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />
+          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary-dark)' }}>
+            {p.branch?.name?.toUpperCase() || 'GLOBAL'}
+          </span>
+        </div>
+      )
+    },
+    {
+      header: 'LAST VISIT',
+      sortKey: 'lastVisit' as keyof Patient,
+      key: (p: Patient) => (
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+          {new Date(p.lastVisit).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
+      )
+    },
+    {
+      header: 'CONDITION',
+      sortKey: 'status' as keyof Patient,
+      key: (p: Patient) => {
+        const statuses: Record<string, { bg: string, color: string }> = {
+          'Critical': { bg: '#fee2e2', color: '#991b1b' },
+          'Stable': { bg: '#dcfce7', color: '#166534' },
+          'Recovering': { bg: '#e0f2fe', color: '#0369a1' },
+          'New Case': { bg: '#f1f5f9', color: '#64748b' }
+        };
+        const config = statuses[p.status] || statuses['New Case'];
+        return (
+          <span style={{
+            background: config.bg,
+            color: config.color,
+            padding: '0.4rem 0.8rem',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.65rem',
+            fontWeight: 900,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            display: 'inline-block',
+            textAlign: 'center',
+            border: `1px solid ${config.color}20`
+          }}>
+            {p.status || 'New Case'}
+          </span>
+        );
+      }
+    }
+  ];
+
+  const filterableFields = [
+    {
+      label: 'Condition',
+      key: 'status' as keyof Patient,
+      options: ['Critical', 'Stable', 'Recovering', 'New Case']
+    },
+    {
+      label: 'Branch Location',
+      key: 'branchName' as any, // We'll map this in the data
+      options: allBranches.map(b => b.name)
+    },
+    {
+      label: 'Gender',
+      key: 'gender' as keyof Patient,
+      options: ['Male', 'Female', 'Other']
+    }
+  ];
+
+  return (
+    <div className="patients-container animate-fade-in">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: 'var(--primary)' }} />
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.1em' }}>CLINICAL REGISTRY</span>
+          </div>
+          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em', margin: 0 }}>
+            Patient <span className="gradient-text">Database</span>
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.5rem', fontWeight: 500 }}>
+            Real-time management of clinical records across all operational sites.
+          </p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.6rem', 
+              background: 'white', 
+              color: 'var(--text-main)', 
+              padding: '0.8rem 1.25rem', 
+              borderRadius: 'var(--radius-md)', 
+              fontWeight: 700, 
+              fontSize: '0.85rem',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <Download size={18} /> Export
+          </button>
+          <button
+            onClick={() => router.push('/patients/add')}
+            className="glass-interactive"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.6rem', 
+              background: 'var(--primary)', 
+              color: 'white', 
+              padding: '0.8rem 1.75rem', 
+              borderRadius: 'var(--radius-md)', 
+              fontWeight: 700, 
+              fontSize: '0.85rem',
+              boxShadow: '0 10px 20px -5px rgba(15, 118, 110, 0.3)'
+            }}
+          >
+            <UserPlus size={18} /> Register Patient
+          </button>
+        </div>
+      </div>
+
+        <DataTable
+          data={patients.map(p => ({ ...p, id: p._id, branchName: p.branch?.name || 'Global' }))}
+          columns={columns}
+          filterableFields={filterableFields}
+          searchPlaceholder="Search by name, ID or contact..."
+          onView={(p) => router.push(`/patients/${p._id}`)}
+          onEdit={(p) => router.push(`/patients/${p._id}/edit`)}
+          onDelete={handleDeletePatient}
+        />
+    </div>
+  );
+}

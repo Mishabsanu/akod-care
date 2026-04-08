@@ -1,0 +1,165 @@
+'use client'
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import DataTable from '@/components/DataTable';
+import { usePCMSStore } from '@/store/useStore';
+import api from '@/services/api';
+import { Plus, AlertCircle } from 'lucide-react';
+
+interface InventoryItem {
+  _id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  reorderLevel: number;
+  purchasePrice: number;
+  salePrice: number;
+  totalSold: number;
+  supplier: string;
+  branch: { name: string };
+}
+
+export default function InventoryPage() {
+  const router = useRouter();
+  const { selectedBranchId, isLoading: storeLoading, setIsSyncing, showToast } = usePCMSStore();
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [topSellers, setTopSellers] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const categories = ['Equipment', 'Consumables', 'Medicines', 'Stationery', 'Others'];
+
+  const fetchInventory = async () => {
+    setLoading(true);
+    setIsSyncing(true);
+    try {
+      const [itemsRes, topRes] = await Promise.all([
+          api.get('/inventory'),
+          api.get('/inventory/top-selling')
+      ]);
+      setItems(itemsRes.data);
+      setTopSellers(topRes.data);
+    } catch (err) {
+      console.error('🚫 Registry Error | Failed to fetch inventory:', err);
+    } finally {
+      setLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, [selectedBranchId]);
+
+  const handleDelete = (item: InventoryItem) => {
+    showConfirm(
+      'Delete Inventory Item',
+      `Are you sure you want to permanently delete "${item.name}" from the inventory registry? This action cannot be undone.`,
+      async () => {
+        setIsSyncing(true);
+        try {
+          await api.delete(`/inventory/${item._id}`);
+          showToast('Item deleted successfully.', 'success');
+          fetchInventory();
+        } catch (err) {
+          showToast('Failed to delete item.', 'error');
+        } finally {
+          setIsSyncing(false);
+        }
+      },
+      true
+    );
+  };
+
+  const columns = [
+    { header: 'ITEM NAME', key: 'name' as keyof InventoryItem, style: { fontWeight: 700, color: 'var(--primary)' } },
+    { header: 'SKU', key: 'sku' as keyof InventoryItem, style: { fontSize: '0.8rem', opacity: 0.6 } },
+    { header: 'CATEGORY', key: 'category' as keyof InventoryItem, style: { fontWeight: 600 } },
+    { 
+      header: 'STOCK LEVEL', 
+      key: (i: InventoryItem) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ 
+            fontWeight: 800, 
+            color: i.quantity <= i.reorderLevel ? '#ef4444' : 'var(--text-main)' 
+          }}>
+            {i.quantity} {i.unit}
+          </span>
+          {i.quantity <= i.reorderLevel && (
+            <div title="Low Stock Alert" style={{ color: '#ef4444' }}>
+              <AlertCircle size={14} />
+            </div>
+          )}
+        </div>
+      ),
+      sortKey: 'quantity' as keyof InventoryItem
+    },
+    { header: 'REORDER AT', key: (i: InventoryItem) => `${i.reorderLevel} ${i.unit}`, style: { fontSize: '0.8rem', opacity: 0.6 } },
+    { 
+      header: 'SALE PRICE', 
+      key: (i: InventoryItem) => (
+        <span style={{ fontWeight: 700, color: 'var(--primary)' }}>₹{i.salePrice?.toLocaleString() || '0'}</span>
+      ),
+      sortKey: 'salePrice' as keyof InventoryItem
+    },
+    { header: 'P. PRICE', key: (i: InventoryItem) => `₹${i.purchasePrice?.toLocaleString() || '0'}`, style: { fontSize: '0.8rem', opacity: 0.6 } },
+    { 
+        header: 'PERFORMANCE', 
+        key: (i: InventoryItem) => (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontWeight: 800 }}>{i.totalSold || 0}</span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>SOLD</span>
+            </div>
+        ),
+        sortKey: 'totalSold' as keyof InventoryItem
+    },
+    { header: 'SUPPLIER', key: 'supplier' as keyof InventoryItem, style: { fontSize: '0.85rem' } }
+  ];
+
+  return (
+    <div className="inventory-container animate-fade-in">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>Inventory <span className="gradient-text">Registry</span></h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Manage clinical supplies, equipment stocks, and consumable levels.</p>
+        </div>
+        <button 
+          onClick={() => router.push('/inventory/add')}
+          style={{ background: 'var(--primary)', color: 'white', padding: '0.8rem 1.5rem', borderRadius: 'var(--radius-md)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        >
+          <Plus size={18} /> New Item
+        </button>
+      </div>
+
+      {topSellers.length > 0 && (
+          <div className="top-sellers-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.25rem', marginBottom: '2.5rem' }}>
+              {topSellers.map((s, idx) => (
+                  <div key={s._id} className="card" style={{ padding: '1rem', borderTop: `3px solid ${['#0d9488', '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b'][idx % 5]}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Rank #{idx + 1} Sales</span>
+                        <div style={{ padding: '0.2rem 0.5rem', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', borderRadius: '1rem', fontSize: '0.6rem', fontWeight: 800 }}>HOT</div>
+                      </div>
+                      <h4 style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '0.25rem' }}>{s.name}</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)' }}>₹{s.salePrice?.toLocaleString()}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.totalSold} sold</span>
+                      </div>
+                  </div>
+              ))}
+          </div>
+      )}
+
+        <DataTable 
+          data={items.map(i => ({ ...i, id: i._id }))}
+          columns={columns}
+          searchPlaceholder="Search by name, SKU or supplier..."
+          onEdit={(i) => router.push(`/inventory/${i._id}/edit`)}
+          onDelete={handleDelete}
+          filterableFields={[
+            { label: 'Category', key: 'category' as keyof InventoryItem, options: categories }
+          ]}
+        />
+    </div>
+  );
+}
