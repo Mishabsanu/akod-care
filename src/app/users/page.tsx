@@ -40,19 +40,47 @@ export default function UsersPage() {
     );
   };
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await api.get('/users');
-        setUsers(res.data);
-      } catch (err) {
-        console.error('🚫 Registry Error | Failed to fetch clinical users:', err);
-      } finally {
-        setLoading(false);
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
+      const res = await api.get(`/users?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          setUsers(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          setUsers(res.data);
+          setTotalRecords(res.data.length);
       }
-    };
+    } catch (err) {
+      console.error('🚫 Registry Error | Failed to fetch clinical users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [currentPage, pageSize, searchQuery, activeFilters]);
 
   const columns = [
     { header: 'SPECIALIST NAME', key: 'name' as keyof User, style: { fontWeight: 600, color: 'var(--primary)' } },
@@ -121,6 +149,14 @@ export default function UsersPage() {
           filterableFields={[
             { label: 'Status', key: 'status' as keyof User, options: ['Active', 'Inactive'] }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

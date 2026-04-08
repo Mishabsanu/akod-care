@@ -25,14 +25,44 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [localLoading, setLocalLoading] = useState(true);
 
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
   // -------------------------------------------------------------------
-  // SYNC | Fetch Clinical Patient Registry
+  // SYNC | Fetch Clinical Patient Registry (Server-Paginated)
   // -------------------------------------------------------------------
   const fetchPatients = async () => {
     setLocalLoading(true);
     try {
-      const res = await api.get('/patients');
-      setPatients(res.data);
+      // Build query string
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      // Append filters dynamically
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]); // Using single value for simplicity as backend only expects string, not array
+        }
+      });
+
+      const res = await api.get(`/patients?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          // New Paginated Backend
+          setPatients(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          // Fallback to legacy parsing if backend hasn't been updated yet
+          setPatients(res.data);
+          setTotalRecords(res.data.length);
+      }
     } catch (err) {
       console.error('🚫 Registry Error | Failed to fetch clinic patients:', err);
       showToast('Failed to load clinical registry', 'error');
@@ -43,7 +73,7 @@ export default function PatientsPage() {
 
   useEffect(() => {
     fetchPatients();
-  }, [selectedBranchId]);
+  }, [selectedBranchId, currentPage, pageSize, searchQuery, activeFilters]);
 
   const handleDeletePatient = (patient: Patient) => {
     showConfirm(
@@ -229,6 +259,14 @@ export default function PatientsPage() {
           onView={(p) => router.push(`/patients/${p._id}`)}
           onEdit={(p) => router.push(`/patients/${p._id}/edit`)}
           onDelete={handleDeletePatient}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

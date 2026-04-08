@@ -27,11 +27,37 @@ export default function AppointmentsPage() {
   // -------------------------------------------------------------------
   // SYNC | Fetch Clinical Appointment Registry
   // -------------------------------------------------------------------
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
   const fetchAppointments = async () => {
     setLocalLoading(true);
     try {
-      const res = await api.get('/appointments');
-      setAppointments(res.data);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
+      const res = await api.get(`/appointments?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          setAppointments(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          setAppointments(res.data);
+          setTotalRecords(res.data.length);
+      }
     } catch (err) {
       console.error('🚫 Registry Error | Failed to fetch appointments:', err);
       showToast('Failed to load clinical scheduler.', 'error');
@@ -42,7 +68,7 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     fetchAppointments();
-  }, [selectedBranchId]);
+  }, [selectedBranchId, currentPage, pageSize, searchQuery, activeFilters]);
 
   const handleDeleteAppointment = (appointment: Appointment) => {
     showConfirm(
@@ -89,9 +115,18 @@ export default function AppointmentsPage() {
   const columns = [
     { 
       header: 'PATIENT NAME', 
-      key: (a: Appointment) => (
-        <div>
-          <p style={{ fontWeight: 600, color: 'var(--primary)' }}>{a.patientId?.name || a.patientName || 'Deleted'}</p>
+      key: (a: any) => (
+        <div 
+          onClick={(e) => { 
+            if(a.patientId?._id) { 
+               e.stopPropagation(); 
+               router.push(`/patients/${a.patientId._id}`); 
+            } 
+          }}
+          style={{ cursor: a.patientId?._id ? 'pointer' : 'default', display: 'inline-block' }}
+          title={a.patientId?._id ? "Open Clinical Vault" : ""}
+        >
+          <p style={{ fontWeight: 600, color: 'var(--primary)', textDecoration: a.patientId?._id ? 'underline' : 'none', textUnderlineOffset: '4px' }}>{a.patientId?.name || a.patientName || 'Deleted'}</p>
           <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>{a.patientId?.phone}</p>
         </div>
       )
@@ -142,13 +177,18 @@ export default function AppointmentsPage() {
               Remind
             </button>
           )}
-          {a.status !== 'Completed' && (
+          {a.status !== 'Completed' && a.status !== 'Cancelled' && (
             <button 
               onClick={() => handleStatusUpdate(a._id, 'Completed')}
               style={{ padding: '0.35rem 0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--primary)', color: 'white', fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase' }}
             >
               Done
             </button>
+          )}
+          {(a.status === 'Completed' || a.status === 'Cancelled') && (
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0' }}>
+              Finalized
+            </span>
           )}
         </div>
       )
@@ -179,6 +219,14 @@ export default function AppointmentsPage() {
           filterableFields={[
             { label: 'Status', key: 'status' as keyof Appointment, options: ['Scheduled', 'Confirmed', 'Completed', 'Cancelled'] }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

@@ -30,6 +30,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import api from '@/services/api';
+import { usePCMSStore } from '@/store/useStore';
 
 interface Treatment {
   date: string;
@@ -67,6 +68,7 @@ interface Patient {
 
 export default function PatientDetailsPage() {
   const router = useRouter();
+  const { user } = usePCMSStore();
   const { id } = useParams();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,11 @@ export default function PatientDetailsPage() {
       ]);
       setPatient(ptRes.data);
       // Filter invoices locally if the backend search is generic
-      const ptInvoices = invRes.data.filter((inv: any) => 
+      let invoiceList = invRes.data?.data || invRes.data;
+      if (!Array.isArray(invoiceList)) {
+          invoiceList = [];
+      }
+      const ptInvoices = invoiceList.filter((inv: any) => 
         inv.patientId?._id === id || inv.patientId === id
       );
       setInvoices(ptInvoices);
@@ -271,11 +277,11 @@ export default function PatientDetailsPage() {
       {/* 📑 TABBED WORKSPACE NAVIGATION */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid var(--border-subtle)' }}>
         {[
-            { id: 'overview', label: 'DASHBOARD', icon: LayoutGrid },
-            { id: 'timeline', label: 'CLINICAL HISTORY', icon: Clock },
-            { id: 'billing', label: 'BILLING & INVOICES', icon: CreditCard },
-            { id: 'docs', label: 'MEDICAL DOCUMENTS', icon: FileText }
-        ].map((tab) => (
+            { id: 'overview', label: 'DASHBOARD', icon: LayoutGrid, show: true },
+            { id: 'timeline', label: 'CLINICAL HISTORY', icon: Clock, show: true },
+            { id: 'billing', label: 'BILLING & INVOICES', icon: CreditCard, show: user?.allAccess || user?.role?.toLowerCase() === 'admin' },
+            { id: 'docs', label: 'MEDICAL DOCUMENTS', icon: FileText, show: true }
+        ].filter(t => t.show).map((tab) => (
             <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}

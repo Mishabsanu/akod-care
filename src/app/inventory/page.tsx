@@ -28,17 +28,43 @@ export default function InventoryPage() {
   const [topSellers, setTopSellers] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
   const categories = ['Equipment', 'Consumables', 'Medicines', 'Stationery', 'Others'];
 
   const fetchInventory = async () => {
     setLoading(true);
     setIsSyncing(true);
     try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
       const [itemsRes, topRes] = await Promise.all([
-          api.get('/inventory'),
+          api.get(`/inventory?${params.toString()}`),
           api.get('/inventory/top-selling')
       ]);
-      setItems(itemsRes.data);
+
+      if (itemsRes.data && typeof itemsRes.data.total !== 'undefined') {
+          setItems(itemsRes.data.data);
+          setTotalRecords(itemsRes.data.total);
+      } else {
+          setItems(itemsRes.data);
+          setTotalRecords(itemsRes.data.length);
+      }
       setTopSellers(topRes.data);
     } catch (err) {
       console.error('🚫 Registry Error | Failed to fetch inventory:', err);
@@ -50,7 +76,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchInventory();
-  }, [selectedBranchId]);
+  }, [selectedBranchId, currentPage, pageSize, searchQuery, activeFilters]);
 
   const handleDelete = (item: InventoryItem) => {
     showConfirm(
@@ -159,6 +185,14 @@ export default function InventoryPage() {
           filterableFields={[
             { label: 'Category', key: 'category' as keyof InventoryItem, options: categories }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

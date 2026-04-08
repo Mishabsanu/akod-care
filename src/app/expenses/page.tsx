@@ -24,14 +24,40 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
   const categories = ['Rent', 'Salaries', 'Supplies', 'Utilities', 'Maintenance', 'Marketing', 'Others'];
 
   const fetchExpenses = async () => {
     setLoading(true);
     setIsSyncing(true);
     try {
-      const res = await api.get('/expenses');
-      setExpenses(res.data);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
+      const res = await api.get(`/expenses?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          setExpenses(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          setExpenses(res.data);
+          setTotalRecords(res.data.length);
+      }
     } catch (err) {
       console.error('🚫 Registry Error | Failed to fetch expenses:', err);
     } finally {
@@ -42,7 +68,7 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [selectedBranchId]);
+  }, [selectedBranchId, currentPage, pageSize, searchQuery, activeFilters]);
 
   const handleDelete = (expense: Expense) => {
     showConfirm(
@@ -123,6 +149,14 @@ export default function ExpensesPage() {
             { label: 'Category', key: 'category' as keyof Expense, options: categories },
             { label: 'Status', key: 'status' as keyof Expense, options: ['Paid', 'Pending'] }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

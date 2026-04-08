@@ -43,21 +43,47 @@ export default function ServicesPage() {
     );
   };
 
-  useEffect(() => {
-    const fetchServices = async () => {
-      setLocalLoading(true);
-      try {
-        const res = await api.get('/services');
-        setServices(res.data);
-      } catch (err) {
-        console.error('🚫 Registry Error | Failed to fetch clinical services:', err);
-      } finally {
-        setLocalLoading(false);
-      }
-    };
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
 
+  const fetchServices = async () => {
+    setLocalLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString()
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
+      const res = await api.get(`/services?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          setServices(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          setServices(res.data);
+          setTotalRecords(res.data.length);
+      }
+    } catch (err) {
+      console.error('🚫 Registry Error | Failed to fetch clinical services:', err);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchServices();
-  }, [selectedBranchId]);
+  }, [selectedBranchId, currentPage, pageSize, searchQuery, activeFilters]);
 
   const columns = [
     { header: 'SERVICE NAME', key: 'name' as keyof Service, style: { fontWeight: 600, color: 'var(--primary)' } },
@@ -119,6 +145,14 @@ export default function ServicesPage() {
           filterableFields={[
             { label: 'Status', key: 'status' as keyof Service, options: ['Available', 'Archived'] }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
         />
     </div>
   );

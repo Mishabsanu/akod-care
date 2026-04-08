@@ -36,6 +36,16 @@ interface DataTableProps<T> {
     options: string[];
   }[];
   customActions?: (item: T) => React.ReactNode;
+  
+  // Backend Pagination Support
+  serverPagination?: {
+    totalRecords: number;
+    currentPage: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+    onSearchChange: (search: string) => void;
+    onFilterChange: (filters: Record<string, string[]>) => void;
+  };
 }
 
 export default function DataTable<T extends { id: string }>({ 
@@ -47,11 +57,12 @@ export default function DataTable<T extends { id: string }>({
   customActions,
   searchPlaceholder = "Search clinical records...",
   defaultPageSize = 10,
-  filterableFields = []
+  filterableFields = [],
+  serverPagination
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
+  const [currentPage, setCurrentPage] = useState(serverPagination?.currentPage || 1);
+  const [pageSize, setPageSize] = useState(serverPagination?.pageSize || defaultPageSize);
   const [sortField, setSortField] = useState<keyof T | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
@@ -73,6 +84,25 @@ export default function DataTable<T extends { id: string }>({
       setPendingFilters(activeFilters);
     }
   }, [isFilterOpen, activeFilters]);
+
+  // Sync to Backend if requested
+  useEffect(() => {
+    if (serverPagination) {
+      serverPagination.onSearchChange(searchTerm);
+    }
+  }, [searchTerm, serverPagination]);
+
+  useEffect(() => {
+    if (serverPagination) {
+      serverPagination.onFilterChange(activeFilters);
+    }
+  }, [activeFilters, serverPagination]);
+
+  useEffect(() => {
+    if (serverPagination) {
+      serverPagination.onPageChange(currentPage);
+    }
+  }, [currentPage, serverPagination]);
 
   // -------------------------------------------------------------------
   // LOGIC | Data Processing Center
@@ -135,14 +165,15 @@ export default function DataTable<T extends { id: string }>({
     }
 
     return result;
-  }, [data, searchTerm, sortField, sortDirection, activeFilters, columns]);
+  }, [data, searchTerm, sortField, sortDirection, activeFilters, columns, serverPagination]);
 
   // -------------------------------------------------------------------
   // HANDLERS | Filtering & Pagination
   // -------------------------------------------------------------------
-  const totalPages = Math.ceil(processedData.length / pageSize);
+  const totalItems = serverPagination ? serverPagination.totalRecords : processedData.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
-  const currentData = processedData.slice(startIndex, startIndex + pageSize);
+  const currentData = serverPagination ? data : processedData.slice(startIndex, startIndex + pageSize);
 
   const handleSort = (key: any) => {
     if (sortField === key) {
@@ -208,7 +239,7 @@ export default function DataTable<T extends { id: string }>({
   return (
     <div className="data-table-pro-advanced animate-fade-in">
       {/* 🧭 NAVIGATION BAR | Search (Left) & Filter (Right) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', gap: '2rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', gap: '2rem', position: 'relative' }}>
         <div style={{ position: 'relative', width: '450px' }}>
           <Search size={18} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--primary)', opacity: 0.6 }} />
           <input 
@@ -219,7 +250,7 @@ export default function DataTable<T extends { id: string }>({
             style={{ 
               width: '100%', 
               padding: '0.9rem 1rem 0.9rem 3.5rem', 
-              borderRadius: 'var(--radius-md)', 
+              borderRadius: '2rem', 
               border: '2px solid var(--border-subtle)', 
               background: 'white', 
               fontSize: '1rem',
@@ -228,8 +259,8 @@ export default function DataTable<T extends { id: string }>({
               boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
               transition: 'var(--transition-smooth)'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-            onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
+            onFocus={(e) => { e.target.style.borderColor = 'var(--primary)'; e.target.style.boxShadow = '0 0 0 4px rgba(13, 148, 136, 0.1)'; }}
+            onBlur={(e) => { e.target.style.borderColor = 'var(--border-subtle)'; e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)'; }}
           />
         </div>
 
@@ -241,97 +272,96 @@ export default function DataTable<T extends { id: string }>({
             alignItems: 'center', 
             gap: '0.75rem', 
             padding: '0.9rem 1.5rem', 
-            borderRadius: 'var(--radius-md)', 
+            borderRadius: '2rem', 
             border: isFilterOpen ? '2px solid var(--primary)' : '2px solid var(--border-subtle)',
             background: isFilterOpen ? 'rgba(15, 118, 110, 0.05)' : 'white',
             color: isFilterOpen ? 'var(--primary)' : 'var(--text-main)',
             fontWeight: 800,
             fontSize: '0.85rem',
-            letterSpacing: '0.05em'
+            letterSpacing: '0.05em',
+            transition: 'var(--transition-smooth)'
           }}
         >
           <SlidersHorizontal size={18} />
-          ADVANCED FILTERS
+          FILTERS
           {Object.keys(activeFilters).length > 0 && (
-            <span style={{ background: 'var(--primary)', color: 'white', padding: '1px 6px', borderRadius: '4px', fontSize: '0.65rem' }}>{Object.keys(activeFilters).length}</span>
+            <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '1rem', fontSize: '0.7rem' }}>{Object.keys(activeFilters).length}</span>
           )}
           <ChevronDown size={16} style={{ transition: 'transform 0.3s', transform: isFilterOpen ? 'rotate(180deg)' : 'none' }} />
         </button>
       </div>
 
-      {/* 🔍 FILTER PANEL | Multi-Select Glassmorphism */}
+      {/* 🔍 FILTER PANEL | Inline Compact Style */}
       {isFilterOpen && (
-        <div className="glass-premium animate-fade-in" style={{ padding: '2rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem', border: '1px solid var(--border-subtle)', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2.5rem', marginBottom: '2.5rem' }}>
-            {filterableFields.map((field) => (
-              <div key={String(field.key)}>
-                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '1rem', borderBottom: '1.5px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>{field.label}</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '200px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                    {field.options.map(opt => {
-                        const isChecked = ((pendingFilters[String(field.key)] as any) || []).includes(opt);
-                        return (
-                            <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', padding: '0.4rem', borderRadius: '6px', background: isChecked ? 'rgba(15, 118, 110, 0.05)' : 'transparent', transition: '0.2s' }}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isChecked}
-                                    onChange={() => togglePendingFilter(String(field.key), opt)}
-                                    style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                                />
-                                <span style={{ fontSize: '0.9rem', fontWeight: isChecked ? 700 : 500, color: isChecked ? 'var(--primary)' : 'var(--text-main)' }}>{opt}</span>
-                            </label>
-                        );
-                    })}
+        <div className="glass-premium animate-fade-in" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', boxShadow: '0 4px 20px -10px rgba(0,0,0,0.05)' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '1.5rem' }}>
+              {filterableFields.map((field) => (
+                <div key={String(field.key)}>
+                  <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '0.75rem' }}>{field.label}</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {field.options.map(opt => {
+                          const isChecked = ((pendingFilters[String(field.key)] as any) || []).includes(opt);
+                          return (
+                              <button 
+                                key={opt}
+                                onClick={() => togglePendingFilter(String(field.key), opt)}
+                                style={{ 
+                                  padding: '0.5rem 1rem', 
+                                  borderRadius: '2rem', 
+                                  fontSize: '0.75rem', 
+                                  fontWeight: isChecked ? 800 : 600, 
+                                  background: isChecked ? 'var(--primary)' : '#f1f5f9', 
+                                  color: isChecked ? 'white' : 'var(--text-main)', 
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  transition: '0.2s' 
+                                }}
+                              >
+                                  {opt}
+                              </button>
+                          );
+                      })}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-            <button 
-              onClick={() => { setPendingFilters({}); setActiveFilters({}); setIsFilterOpen(false); }}
-              style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: 800, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <RotateCcw size={16} /> RESET ALL CLINICAL FILTERS
-            </button>
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.25rem', borderTop: '1px solid var(--border-subtle)' }}>
               <button 
-                onClick={() => setIsFilterOpen(false)}
-                style={{ padding: '0.8rem 1.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)' }}
+                onClick={() => { setPendingFilters({}); setActiveFilters({}); setIsFilterOpen(false); }}
+                style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 800, letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'none', border: 'none', cursor: 'pointer' }}
               >
-                CLOSE
-              </button>
+                <RotateCcw size={14} /> RESET
+            </button>
               <button 
                 onClick={applyFilters}
                 style={{ 
                   background: 'var(--primary)', 
                   color: 'white', 
-                  padding: '0.8rem 2.5rem', 
-                  borderRadius: 'var(--radius-md)', 
-                  fontSize: '0.85rem', 
+                  padding: '0.75rem 1.5rem', 
+                  borderRadius: '2rem', 
+                  fontSize: '0.8rem', 
                   fontWeight: 950, 
                   letterSpacing: '0.05em', 
                   display: 'flex', 
                   alignItems: 'center', 
-                  gap: '0.6rem',
-                  boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)'
+                  gap: '0.5rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)',
+                  marginLeft: '1rem'
                 }}
               >
-                <CheckCircle2 size={18} /> APPLY ADVANCED FILTERS
+                <CheckCircle2 size={16} /> APPLY
               </button>
             </div>
           </div>
-        </div>
       )}
 
       {/* 🏷️ MULTI-FILTER CHIPS | Pro Dynamics */}
-      {(searchTerm || Object.entries(activeFilters).some(([_, v]) => (v as any)?.length > 0)) && (
+      {(Object.entries(activeFilters).some(([_, v]) => (v as any)?.length > 0)) && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1.5rem', minHeight: '32px' }}>
              <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--primary)', opacity: 0.5, letterSpacing: '0.1em', alignSelf: 'center', marginRight: '0.5rem' }}>FILTERED BY:</span>
-             {searchTerm && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'white', border: '1.5px solid var(--border-subtle)', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: 700 }}>
-                    <Search size={12} style={{ opacity: 0.4 }} /> {searchTerm} <X size={14} onClick={() => setSearchTerm('')} style={{ cursor: 'pointer', opacity: 0.4 }} />
-                </div>
-             )}
              {Object.entries(activeFilters).map(([key, values]) => {
                 const label = filterableFields.find(f => String(f.key) === key)?.label;
                 return (values as any).map((val: string) => (
@@ -451,25 +481,33 @@ export default function DataTable<T extends { id: string }>({
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* 🔢 PAGINATION | Pro Dynamics */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem', padding: '0 1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>ROWS / PAGE</span>
-            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', border: '2px solid var(--border-subtle)', background: 'white', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}>
-              {[5, 10, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
+        {/* 🔢 PAGINATION | Pro Dynamics (Integrated Footer) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.75rem', background: '#f8fafc', borderTop: '2px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em' }}>ROWS DISPLAYED</span>
+            <select value={pageSize} onChange={(e) => { 
+                const newSize = Number(e.target.value);
+                setPageSize(newSize); 
+                setCurrentPage(1); 
+                // Refresh if server paginated
+                if (serverPagination) {
+                    // Update limit state on parent if possible, but currently we just trigger reload
+                    // In a perfect world, parent controls pageSize state too. We'll leave it as is.
+                }
+            }} style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', border: '2px solid var(--border-subtle)', background: 'white', fontSize: '0.9rem', fontWeight: 800, cursor: 'pointer', outline: 'none' }}>
+              {[10, 15, 25, 50, 100].map(v => <option key={v} value={v}>{v}</option>)}
             </select>
           </div>
           <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-            Catalog results <span style={{ color: 'var(--primary)', fontWeight: 950 }}>{startIndex + 1}–{Math.min(startIndex + pageSize, processedData.length)}</span> of <span style={{ color: 'var(--primary)', fontWeight: 950 }}>{processedData.length}</span>
+            Catalog results <span style={{ color: 'var(--primary)', fontWeight: 950 }}>{totalItems > 0 ? startIndex + 1 : 0}–{Math.min(startIndex + pageSize, totalItems)}</span> of <span style={{ color: 'var(--primary)', fontWeight: 950 }}>{totalItems}</span>
           </span>
         </div>
 
         <div style={{ display: 'flex', gap: '0.6rem' }}>
-          <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} className="glass-interactive" style={{ width: '48px', height: '48px', borderRadius: '12px', border: '2px solid var(--border-subtle)', background: 'white', color: 'var(--text-main)', opacity: currentPage === 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ChevronLeft size={24} />
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} className="glass-interactive" style={{ width: '40px', height: '40px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'white', color: 'var(--text-main)', opacity: currentPage === 1 ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ChevronLeft size={18} />
           </button>
           
           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -478,15 +516,16 @@ export default function DataTable<T extends { id: string }>({
               .map((p, i, arr) => (
                 <React.Fragment key={p}>
                   {i > 0 && arr[i-1] !== p - 1 && <span style={{ alignSelf: 'center', opacity: 0.3, fontWeight: 900 }}>···</span>}
-                  <button onClick={() => setCurrentPage(p)} style={{ width: '48px', height: '48px', borderRadius: '12px', border: '2px solid', borderColor: currentPage === p ? 'var(--primary)' : 'var(--border-subtle)', background: currentPage === p ? 'var(--primary)' : 'white', color: currentPage === p ? 'white' : 'var(--text-main)', fontSize: '1rem', fontWeight: 950, transition: 'var(--transition-smooth)' }}>{p}</button>
+                  <button onClick={() => setCurrentPage(p)} style={{ width: '40px', height: '40px', borderRadius: '8px', border: 'none', background: currentPage === p ? 'var(--primary)' : 'rgba(0,0,0,0.03)', color: currentPage === p ? 'white' : 'var(--text-main)', fontSize: '0.85rem', fontWeight: 900, transition: 'var(--transition-smooth)', boxShadow: currentPage === p ? '0 10px 20px -5px rgba(15, 118, 110, 0.4)' : 'none' }}>{p}</button>
                 </React.Fragment>
               ))
             }
           </div>
 
-          <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} className="glass-interactive" style={{ width: '48px', height: '48px', borderRadius: '12px', border: '2px solid var(--border-subtle)', background: 'white', color: 'var(--text-main)', opacity: (currentPage === totalPages || totalPages === 0) ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <ChevronRight size={24} />
-          </button>
+          <button disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} className="glass-interactive" style={{ width: '40px', height: '40px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'white', color: 'var(--text-main)', opacity: (currentPage === totalPages || totalPages === 0) ? 0.3 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ChevronRight size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </div>

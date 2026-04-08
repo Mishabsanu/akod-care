@@ -76,10 +76,10 @@ export const usePCMSStore = create<PCMSState>((set, get) => ({
     try {
       const [userRes, branchesRes] = await Promise.all([
         api.get('/auth/me'),
-        api.get('/branches')
+        api.get('/branches?limit=1000')
       ]);
 
-      const branches = branchesRes.data;
+      const branches = branchesRes.data.data || branchesRes.data;
       set({ allBranches: branches });
 
       if (userRes.data.user) {

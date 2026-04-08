@@ -91,12 +91,40 @@ export default function PayrollPage() {
     return false;
   };
 
+  // Backend Pagination State
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+
   const fetchPayroll = async () => {
     setIsSyncing(true);
     setLoading(true);
     try {
-      const res = await api.get(`/payroll/registry?month=${selectedMonth}&year=${selectedYear}`);
-      setRecords(res.data);
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: pageSize.toString(),
+        month: selectedMonth,
+        year: selectedYear
+      });
+      if (searchQuery) params.append('search', searchQuery);
+      
+      Object.entries(activeFilters).forEach(([key, values]) => {
+        if (values && values.length > 0) {
+            params.append(key, values[0]);
+        }
+      });
+
+      const res = await api.get(`/payroll/registry?${params.toString()}`);
+      
+      if (res.data && typeof res.data.total !== 'undefined') {
+          setRecords(res.data.data);
+          setTotalRecords(res.data.total);
+      } else {
+          setRecords(res.data);
+          setTotalRecords(res.data.length);
+      }
     } catch (err) {
       console.error('🚫 Registry Error | Failed to fetch payroll data:', err);
       showToast('Could not synchronize payroll ledger.', 'error');
@@ -108,7 +136,7 @@ export default function PayrollPage() {
 
   useEffect(() => {
     fetchPayroll();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, currentPage, pageSize, searchQuery, activeFilters]);
 
   const fetchStaffAttendance = async (staff: PayrollRecord) => {
     setSelectedStaff(staff);
@@ -329,6 +357,14 @@ export default function PayrollPage() {
           filterableFields={[
             { label: 'Payment Status', key: 'paymentStatus' as keyof PayrollRecord, options: ['Paid', 'Pending'] }
           ]}
+          serverPagination={{
+            totalRecords,
+            currentPage,
+            pageSize,
+            onPageChange: setCurrentPage,
+            onSearchChange: (s) => { setSearchQuery(s); setCurrentPage(1); },
+            onFilterChange: (f) => { setActiveFilters(f); setCurrentPage(1); }
+          }}
           customActions={(staff: PayrollRecord) => (
             <button 
                 onClick={() => handleProcessPayment(staff)}
