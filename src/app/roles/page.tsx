@@ -108,7 +108,7 @@ export default function RolesPage() {
           onEdit={(r) => router.push(`/roles/${r._id}/edit`)}
           onDelete={handleDelete}
           filterableFields={[
-            { label: 'Type', key: 'isSystemRole' as keyof Role, options: [true, false] }
+            { label: 'Type', key: 'isSystemRole' as keyof Role, options: ['true', 'false'] }
           ]}
         />
     </div>

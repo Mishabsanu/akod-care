@@ -23,7 +23,7 @@ interface InventoryItem {
 
 export default function InventoryPage() {
   const router = useRouter();
-  const { selectedBranchId, isLoading: storeLoading, setIsSyncing, showToast } = usePCMSStore();
+  const { selectedBranchId, isLoading: storeLoading, setIsSyncing, showToast, showConfirm } = usePCMSStore();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [topSellers, setTopSellers] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);

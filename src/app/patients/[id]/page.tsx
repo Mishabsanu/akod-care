@@ -1,36 +1,27 @@
 'use client'
-import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import {
-  ArrowLeft,
-  User,
-  Phone,
-  MapPin,
-  Calendar,
-  Activity,
-  Weight,
-  Ruler,
-  Briefcase,
-  Plus,
-  Edit,
-  ClipboardList,
-  Hash,
-  Stethoscope,
-  Heart,
-  MessageCircle,
-  TrendingUp,
-  FileText,
-  CreditCard,
-  Layers,
-  CircleDot,
-  CheckCircle2,
-  Clock,
-  Printer,
-  ChevronRight,
-  LayoutGrid
-} from 'lucide-react';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    ChevronRight,
+    CircleDot,
+    ClipboardList,
+    Clock,
+    CreditCard,
+    Edit,
+    FileText,
+    LayoutGrid,
+    MapPin,
+    Plus,
+    Printer,
+    Ruler,
+    Stethoscope,
+    TrendingUp,
+    Weight
+} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 interface Treatment {
   date: string;
@@ -279,7 +270,7 @@ export default function PatientDetailsPage() {
         {[
             { id: 'overview', label: 'DASHBOARD', icon: LayoutGrid, show: true },
             { id: 'timeline', label: 'CLINICAL HISTORY', icon: Clock, show: true },
-            { id: 'billing', label: 'BILLING & INVOICES', icon: CreditCard, show: user?.allAccess || user?.role?.toLowerCase() === 'admin' },
+            { id: 'billing', label: 'BILLING & INVOICES', icon: CreditCard, show: user?.allAccess || user?.roleName?.toLowerCase() === 'admin' },
             { id: 'docs', label: 'MEDICAL DOCUMENTS', icon: FileText, show: true }
         ].filter(t => t.show).map((tab) => (
             <button
