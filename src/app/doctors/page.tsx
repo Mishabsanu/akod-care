@@ -28,7 +28,8 @@ export default function DoctorsPage() {
       showToast('Specialist successfully removed from registry.', 'success');
       // Refresh list
       const res = await api.get('/doctors');
-      setDoctors(res.data);
+      const data = res.data?.data || res.data;
+      setDoctors(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('🚫 Registry Error | Deletion failed:', err);
       showToast('Failed to remove specialist. Ensure no active dependencies exist.', 'error');
@@ -40,7 +41,8 @@ export default function DoctorsPage() {
       setLocalLoading(true);
       try {
         const res = await api.get('/doctors');
-        setDoctors(res.data);
+        const data = res.data?.data || res.data;
+        setDoctors(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch specialists:', err);
       } finally {

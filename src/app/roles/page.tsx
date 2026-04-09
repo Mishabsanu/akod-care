@@ -26,7 +26,8 @@ export default function RolesPage() {
     const fetchRoles = async () => {
       try {
         const res = await api.get('/roles');
-        setRoles(res.data);
+        const data = res.data?.data || res.data;
+        setRoles(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch clinical roles:', err);
       } finally {
