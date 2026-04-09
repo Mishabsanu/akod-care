@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:2000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ||
+  //  'http://localhost:2000/api' ||
+  'https://akod-care-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -14,11 +16,11 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   if (branchId) {
     config.headers['x-clinical-branch'] = branchId;
   }
-  
+
   return config;
 });
 
@@ -36,10 +38,10 @@ api.interceptors.response.use(
       try {
         const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
         const { accessToken } = res.data;
-        
+
         localStorage.setItem('accessToken', accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-        
+
         return api(originalRequest);
       } catch (err) {
         // Refresh token failed/expired -> Log out user
