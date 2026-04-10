@@ -52,7 +52,7 @@ export default function EditPatientPage() {
             status: patient.status || ''
           });
         }
-        setBranches(branchesRes.data);
+        setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch medical file:', err);
         showToast('Failed to synchronize medical record.', 'error');

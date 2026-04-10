@@ -30,7 +30,7 @@ export default function BranchesPage() {
           showToast('Clinical site successfully removed.', 'success');
           // Refresh list
           const res = await api.get('/branches');
-          setBranches(res.data);
+          setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []));
         } catch (err) {
           console.error('🚫 Registry Error | Deletion failed:', err);
           showToast('Failed to remove clinical site. Ensure no active personnel or patients are linked.', 'error');
@@ -67,7 +67,7 @@ export default function BranchesPage() {
           setBranches(res.data.data);
           setTotalRecords(res.data.total);
       } else {
-          setBranches(res.data);
+          setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {

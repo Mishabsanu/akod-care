@@ -37,7 +37,7 @@ export default function GenerateInvoicePage() {
       try {
         // Fetch independently to avoid "Cascade Failure" if one registry is slow
         const getPatients = api.get('/patients/dropdown').then(res => setPatients(res.data)).catch(e => console.error('Pt Error', e));
-        const getBranches = api.get('/branches').then(res => setBranches(res.data)).catch(e => console.error('Br Error', e));
+        const getBranches = api.get('/branches').then(res => setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []))).catch(e => console.error('Br Error', e));
         const getServices = api.get('/services').then(res => setServices(res.data)).catch(e => console.error('Svc Error', e));
         const getInventory = api.get('/inventory').then(res => setInventory(res.data)).catch(e => console.error('Inv Error', e));
 

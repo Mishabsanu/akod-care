@@ -48,7 +48,7 @@ export default function EditDoctorPage() {
           });
         }
         
-        setBranches(branchesRes.data);
+        setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch specialist profile:', err);
         showToast('Failed to load specialist profile.', 'error');

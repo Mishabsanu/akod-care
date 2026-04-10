@@ -66,7 +66,7 @@ export default function EditInvoicePage() {
         
         setPatients(patientsRes.data);
         setServices(servicesRes.data);
-        setBranches(branchesRes.data);
+        setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Ledger Error | Failed to fetch clinical record:', err);
         showToast('Failed to load financial record.', 'error');

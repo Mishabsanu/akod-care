@@ -47,7 +47,7 @@ export default function RegisterPatientPage() {
     const fetchBranches = async () => {
       try {
         const res = await api.get('/branches');
-        setBranches(res.data);
+        setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch site options:', err);
       }
@@ -144,7 +144,7 @@ export default function RegisterPatientPage() {
               <label className="label-premium">Assigned Branch <span style={{ color: '#ef4444' }}>*</span></label>
               <select required disabled={loading} className="input-premium" value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })}>
                 <option value="">Select Site</option>
-                {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                {branches?.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
               </select>
             </div>
           )}

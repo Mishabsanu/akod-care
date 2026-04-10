@@ -35,7 +35,7 @@ export default function EditServicePage() {
           api.get('/branches')
         ]);
         
-        setBranches(branchesRes.data);
+        setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
         const service = serviceRes.data;
         
         if (service) {

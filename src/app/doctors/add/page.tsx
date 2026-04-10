@@ -27,7 +27,7 @@ export default function AddDoctorPage() {
     const fetchBranches = async () => {
       try {
         const res = await api.get('/branches');
-        setBranches(res.data);
+        setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch site options:', err);
       }

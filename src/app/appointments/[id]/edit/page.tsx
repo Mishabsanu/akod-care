@@ -72,7 +72,7 @@ export default function EditAppointmentPage() {
         
         setPatients(patientsRes.data);
         setDoctors(doctorsRes.data);
-        setBranches(branchesRes.data);
+        setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch scheduling record:', err);
         showToast('Failed to synchronize booking data.', 'error');
