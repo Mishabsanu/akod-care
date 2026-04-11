@@ -31,7 +31,7 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', formData);
       const { accessToken, user } = res.data;
       
-      sessionStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('accessToken', accessToken);
       setUser(user);
       
       router.push('/');

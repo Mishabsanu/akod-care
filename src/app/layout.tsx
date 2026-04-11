@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body style={{ margin: 0, padding: 0 }}>
+    <html lang="en">
+      <body style={{ margin: 0, padding: 0 }} suppressHydrationWarning>
         <NextTopLoader color="var(--primary)" height={3} showSpinner={false} />
         <ClinicalWrapper>
             {children}

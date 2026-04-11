@@ -58,16 +58,16 @@ export const usePCMSStore = create<PCMSState>((set, get) => ({
     set({ user });
     if (user && !user.allAccess) {
         set({ selectedBranchId: user.branchId });
-        sessionStorage.setItem('selectedBranchId', user.branchId);
+        localStorage.setItem('selectedBranchId', user.branchId);
     }
   },
 
   setSelectedBranchId: (branchId) => {
     set({ selectedBranchId: branchId });
     if (branchId) {
-      sessionStorage.setItem('selectedBranchId', branchId);
+      localStorage.setItem('selectedBranchId', branchId);
     } else {
-      sessionStorage.removeItem('selectedBranchId');
+      localStorage.removeItem('selectedBranchId');
     }
   },
 
@@ -91,10 +91,10 @@ export const usePCMSStore = create<PCMSState>((set, get) => ({
         // Staff are strictly locked to their assigned branchId
         if (user.allAccess) {
             set({ selectedBranchId: null });
-            sessionStorage.removeItem('selectedBranchId'); // Clear any previous specific selection
+            localStorage.removeItem('selectedBranchId'); // Clear any previous specific selection
         } else {
             set({ selectedBranchId: user.branchId });
-            sessionStorage.setItem('selectedBranchId', user.branchId);
+            localStorage.setItem('selectedBranchId', user.branchId);
         }
       }
     } catch (err) {
@@ -107,8 +107,8 @@ export const usePCMSStore = create<PCMSState>((set, get) => ({
   logout: async () => {
     try {
       await api.post('/auth/logout');
-      sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('selectedBranchId');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('selectedBranchId');
       set({ user: null, selectedBranchId: null });
       window.location.href = '/login';
     } catch (err) {
