@@ -43,7 +43,7 @@ export default function OnboardUserPage() {
           api.get('/roles'),
           api.get('/branches')
         ]);
-        setRoles(rolesRes.data);
+        setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : (rolesRes.data?.data || []));
         setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch clinical options:', err);

@@ -44,8 +44,8 @@ export default function CreateInvoicePage() {
           api.get('/services'),
           api.get('/branches')
         ]);
-        setPatients(patientsRes.data);
-        setServices(servicesRes.data);
+        setPatients(Array.isArray(patientsRes.data) ? patientsRes.data : (patientsRes.data?.data || []));
+        setServices(Array.isArray(servicesRes.data) ? servicesRes.data : (servicesRes.data?.data || []));
         setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Ledger Error | Failed to fetch clinical options:', err);

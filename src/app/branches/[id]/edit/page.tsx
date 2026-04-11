@@ -71,7 +71,7 @@ export default function EditBranchPage() {
   );
 
   return (
-    <div className="edit-branch-container animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '7rem' }}>
+    <div className="edit-branch-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '7rem' }}>
       
       {/* 🏥 CLINICAL HEADER */}
       <div style={{ marginBottom: '3rem' }}>
@@ -130,6 +130,7 @@ export default function EditBranchPage() {
               <select required disabled={saving} className="input-premium" style={{ paddingLeft: '2.75rem', fontWeight: 800, color: 'var(--primary)' }} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
                  <option value="Active">Authorized / Active</option>
                  <option value="Inactive">Temporary Deactivation</option>
+                 <option value="Setup In-Progress">Setup In-Progress</option>
               </select>
             </div>
           </div>

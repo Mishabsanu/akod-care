@@ -52,10 +52,10 @@ export default function ExpensesPage() {
       const res = await api.get(`/expenses?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setExpenses(res.data.data);
+          setExpenses(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setExpenses(res.data);
+          setExpenses(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -143,6 +143,7 @@ export default function ExpensesPage() {
           data={expenses.map(e => ({ ...e, id: e._id }))}
           columns={columns}
           searchPlaceholder="Search by description or ID..."
+          onView={(e) => router.push(`/expenses/${e._id}`)}
           onEdit={(e) => router.push(`/expenses/${e._id}/edit`)}
           onDelete={handleDelete}
           filterableFields={[

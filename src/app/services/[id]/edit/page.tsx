@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/services/api';
+import { ArrowLeft, Tag, CreditCard, Activity, Building2, CheckCircle2, FlaskConical } from 'lucide-react';
 
 import { usePCMSStore } from '@/store/useStore';
 
@@ -85,71 +86,117 @@ export default function EditServicePage() {
   if (loading) return <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>🛡️ Accessing Clinical Registry...</div>;
 
   return (
-    <div className="edit-service-container animate-fade-in" style={{ maxWidth: '800px' }}>
-      <div style={{ marginBottom: '2rem' }}>
+    <div className="edit-service-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '7rem' }}>
+      <div style={{ marginBottom: '3rem' }}>
         <button 
           onClick={() => router.back()} 
-          style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, background: 'rgba(15, 118, 110, 0.08)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)' }}
         >
-          ← Back to Registry
+          <ArrowLeft size={16} /> Registry Dashboard
         </button>
-        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>Edit Service: <span className="gradient-text">{formData.name}</span></h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Modify the clinical modality's profile, session rates, and branch availability.</p>
+        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>Modify Clinical <span className="gradient-text">Modality</span></h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Adjust modality profiling, session rates, and branch availability constraints.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card" style={{ padding: '2.5rem', opacity: saving ? 0.7 : 1 }}>
-        <div style={{ padding: '1rem', background: '#f1f5f9', borderRadius: 'var(--radius-sm)', marginBottom: '2rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-           Service Code: <strong style={{ color: 'var(--primary)' }}>{id}</strong> • Last Updated: Persistently Synchronized
+      <form onSubmit={handleSubmit} className="clinical-form-card" style={{ opacity: saving ? 0.7 : 1 }}>
+        <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: 'var(--radius-sm)', marginBottom: '2.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', borderLeft: '4px solid var(--primary)', fontWeight: 600 }}>
+           Modality Code: <strong style={{ color: 'var(--primary)' }}>{id}</strong> • Last Updated: Persistently Synchronized
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Service Name</label>
-            <input required disabled={saving} type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+        <div className="clinical-form-grid">
+          <div className="col-12">
+            <label className="label-premium">Modality Name <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <FlaskConical size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={saving} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="e.g. Ultrasound Therapy" />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Update Price (₹)</label>
-            <input required disabled={saving} type="number" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+
+          <div className="col-4">
+            <label className="label-premium">Update Session Rate (₹) <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <CreditCard size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={saving} type="number" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} placeholder="0" />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Status</label>
-            <select required disabled={saving} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }}>
-              <option value="" disabled>Select Status</option>
-              <option value="Available">Available</option>
-              <option value="Archived">Archived</option>
-            </select>
+
+          <div className="col-4">
+            <label className="label-premium">Primary Category <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Tag size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select required disabled={saving} className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
+                <option value="" disabled>Select Category</option>
+                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="col-4">
+            <label className="label-premium">Modality Status <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Activity size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select required disabled={saving} className="input-premium" style={{ paddingLeft: '2.75rem', fontWeight: 800, color: 'var(--primary)' }} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                <option value="Available">Available</option>
+                <option value="Archived">Archived</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="col-12" style={{ marginTop: '1rem' }}>
+            <label className="label-premium">Branch Availability Constraints</label>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              {branches.map(branch => (
+                 <button 
+                  disabled={saving}
+                  type="button" 
+                  key={branch._id} 
+                  onClick={() => toggleBranch(branch._id)}
+                  className="glass-interactive"
+                  style={{ 
+                    padding: '0.65rem 1.25rem', 
+                    borderRadius: 'var(--radius-sm)', 
+                    fontSize: '0.8rem', 
+                    fontWeight: 800,
+                    border: `1px solid ${formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                    background: formData.branches.includes(branch._id) ? 'rgba(15, 118, 110, 0.1)' : 'white',
+                    color: formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}
+                 >
+                   <Building2 size={14} /> {branch.name}
+                 </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div style={{ marginBottom: '2.5rem' }}>
-          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '1rem' }}>Active Branches</label>
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {branches.map(branch => (
-               <button 
-                disabled={saving}
-                type="button" 
-                key={branch._id} 
-                onClick={() => toggleBranch(branch._id)}
-                className="glass"
-                style={{ 
-                  padding: '0.5rem 1rem', 
-                  borderRadius: '1rem', 
-                  fontSize: '0.75rem', 
-                  fontWeight: 600,
-                  border: `1px solid ${formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                  background: formData.branches.includes(branch._id) ? 'rgba(15, 118, 110, 0.1)' : 'white'
-                }}
-               >
-                 {branch.name}
-               </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-          <button type="button" disabled={saving} onClick={() => router.back()} style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 600 }}>Cancel Updates</button>
-          <button type="submit" disabled={saving} style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', background: 'var(--primary)', color: 'white', fontWeight: 600 }}>
-            {saving ? 'Updating Registry...' : 'Save Changes'}
+        <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'flex-end', marginTop: '4rem' }}>
+          <button 
+            type="button" 
+            disabled={saving} 
+            onClick={() => router.back()} 
+            style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 700, background: 'white', color: 'var(--text-muted)' }}
+          >
+            CANCEL UPDATES
+          </button>
+          <button 
+            type="submit" 
+            disabled={saving} 
+            style={{ 
+                padding: '0.85rem 2.5rem', 
+                borderRadius: 'var(--radius-md)', 
+                background: 'var(--primary)', 
+                color: 'white', 
+                fontWeight: 900, 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)' 
+            }}
+          >
+            {saving ? 'SYNCHRONIZING...' : <><CheckCircle2 size={18} /> SAVE MODIFICATIONS</>}
           </button>
         </div>
       </form>

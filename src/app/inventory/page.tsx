@@ -180,6 +180,7 @@ export default function InventoryPage() {
           data={items.map(i => ({ ...i, id: i._id }))}
           columns={columns}
           searchPlaceholder="Search by name, SKU or supplier..."
+          onView={(i) => router.push(`/inventory/${i._id}`)}
           onEdit={(i) => router.push(`/inventory/${i._id}/edit`)}
           onDelete={handleDelete}
           filterableFields={[

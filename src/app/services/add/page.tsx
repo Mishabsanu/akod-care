@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
+import { ArrowLeft, Tag, CreditCard, Building2, FlaskConical, CheckCircle2 } from 'lucide-react';
 
 export default function AddServicePage() {
   const router = useRouter();
@@ -57,63 +58,75 @@ export default function AddServicePage() {
   };
 
   return (
-    <div className="add-service-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '5rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
+    <div className="add-service-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '7rem' }}>
+      <div style={{ marginBottom: '3rem' }}>
         <button
           onClick={() => router.back()}
-          style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, background: 'rgba(15, 118, 110, 0.08)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)' }}
         >
-          ← Back to Registry
+          <ArrowLeft size={16} /> Registry Dashboard
         </button>
-        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>New Clinical <span className="gradient-text">Service</span></h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Define a new treatment modality and set its standard clinical rate.</p>
+        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>New Clinical <span className="gradient-text">Modality</span></h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Define a new treatment modality, configure session rates, and authorize branch deployment.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="clinical-form-card" style={{ opacity: loading ? 0.7 : 1 }}>
         <div className="clinical-form-grid">
+          <div className="col-12">
+            <label className="label-premium">Modality Name <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <FlaskConical size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Ultrasound Therapy" />
+            </div>
+          </div>
           <div className="col-6">
-            <label className="label-premium">Service/Treatment Name</label>
-            <input required disabled={loading} type="text" className="input-premium" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Ultrasound Therapy" />
+            <label className="label-premium">Primary Category <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Tag size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select disabled={loading} className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
-          <div className="col-3">
-            <label className="label-premium">Category</label>
-            <select disabled={loading} className="input-premium" value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
-              {categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="col-3">
-            <label className="label-premium">Standard Rate (₹)</label>
-            <input required disabled={loading} type="number" className="input-premium" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="₹ 0.00" />
+          <div className="col-6">
+            <label className="label-premium">Standard Session Rate (₹) <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <CreditCard size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="number" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="₹ 0.00" />
+            </div>
           </div>
 
           <div className="col-12">
-            <label className="label-premium">Brief Description</label>
-            <textarea disabled={loading} rows={2} className="input-premium" style={{ height: '80px', resize: 'none' }} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Describe the clinical benefits and procedure..." />
+            <label className="label-premium">Modality Description</label>
+            <textarea disabled={loading} rows={2} className="textarea-premium" style={{ minHeight: '100px', resize: 'vertical' }} value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Describe the clinical benefits, duration, and equipment requirements for this modality..." />
           </div>
 
           {user?.allAccess && (
-            <div className="col-12" style={{ marginTop: '1rem' }}>
-              <label className="label-premium">Branch Availability & Deployment</label>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>Select clinical sites where this service is authorized to be provided.</p>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <div className="col-12" style={{ marginTop: '2rem' }}>
+              <label className="label-premium">Clinical Site Deployment</label>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.25rem', fontStyle: 'italic' }}>Authorize the clinical branches where this treatment modality will be available.</p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                 {branches.map(branch => (
                   <button
                     disabled={loading}
                     type="button"
                     key={branch._id}
                     onClick={() => toggleBranch(branch._id)}
+                    className="glass-interactive"
                     style={{
-                      padding: '0.6rem 1.25rem',
-                      borderRadius: '2rem',
+                      padding: '0.65rem 1.25rem',
+                      borderRadius: 'var(--radius-sm)',
                       fontSize: '0.8rem',
-                      fontWeight: 700,
-                      transition: 'all 0.2s ease',
-                      border: `2px solid ${formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                      background: formData.branches.includes(branch._id) ? 'rgba(15, 118, 110, 0.08)' : 'white',
-                      color: formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--text-muted)'
+                      fontWeight: 800,
+                      border: `1px solid ${formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                      background: formData.branches.includes(branch._id) ? 'rgba(15, 118, 110, 0.1)' : 'white',
+                      color: formData.branches.includes(branch._id) ? 'var(--primary)' : 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
                     }}
                   >
-                    {branch.name}
+                    <Building2 size={14} /> {branch.name}
                   </button>
                 ))}
               </div>
@@ -121,10 +134,32 @@ export default function AddServicePage() {
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '3rem' }}>
-          <button type="button" disabled={loading} onClick={() => router.back()} style={{ padding: '0.85rem 2.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 600 }}>Cancel</button>
-          <button type="submit" disabled={loading} style={{ padding: '0.85rem 3rem', borderRadius: 'var(--radius-md)', background: 'var(--primary)', color: 'white', fontWeight: 700, boxShadow: 'var(--shadow-sm)' }}>
-            {loading ? 'Finalizing Registry...' : 'FINALIZE CLINICAL SERVICE'}
+        {/* Action Row */}
+        <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'flex-end', marginTop: '4rem' }}>
+          <button 
+            type="button" 
+            disabled={loading} 
+            onClick={() => router.back()} 
+            style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 700, background: 'white', color: 'var(--text-muted)' }}
+          >
+            CANCEL REGISTRY
+          </button>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ 
+                padding: '0.85rem 3rem', 
+                borderRadius: 'var(--radius-md)', 
+                background: 'var(--primary)', 
+                color: 'white', 
+                fontWeight: 900, 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)' 
+            }}
+          >
+            {loading ? 'INITIALIZING...' : <><CheckCircle2 size={18} /> AUTHORIZE MODALITY</>}
           </button>
         </div>
       </form>

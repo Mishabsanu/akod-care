@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, User, Calendar, Clock, Stethoscope, CheckCircle2, Building, MessageCircle } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Clock, Stethoscope, CheckCircle2, Building, MessageCircle, ClipboardList, Activity } from 'lucide-react';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
 
@@ -70,8 +70,8 @@ export default function EditAppointmentPage() {
           });
         }
         
-        setPatients(patientsRes.data);
-        setDoctors(doctorsRes.data);
+        setPatients(Array.isArray(patientsRes.data) ? patientsRes.data : (patientsRes.data?.data || []));
+        setDoctors(Array.isArray(doctorsRes.data) ? doctorsRes.data : (doctorsRes.data?.data || []));
         setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch scheduling record:', err);
@@ -198,12 +198,15 @@ export default function EditAppointmentPage() {
 
           <div className="col-4">
             <label className="label-premium">Clinical Category</label>
-            <select className="input-premium" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
-              <option value="Consultation">Clinical Consultation</option>
-              <option value="Therapy Session">Manual Therapy Session</option>
-              <option value="Follow-up">Diagnostic Follow-up</option>
-              <option value="Rehabilitation">Post-Op Rehabilitation</option>
-            </select>
+            <div style={{ position: 'relative' }}>
+              <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                <option value="Consultation">Clinical Consultation</option>
+                <option value="Therapy Session">Manual Therapy Session</option>
+                <option value="Follow-up">Diagnostic Follow-up</option>
+                <option value="Rehabilitation">Post-Op Rehabilitation</option>
+              </select>
+            </div>
           </div>
           <div className="col-4">
             <label className="label-premium">Medical Specialist <span style={{ color: '#ef4444' }}>*</span></label>
@@ -235,23 +238,29 @@ export default function EditAppointmentPage() {
 
           <div className="col-6">
             <label className="label-premium">Scheduled Date <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required type="date" className="input-premium" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+            <div style={{ position: 'relative' }}>
+              <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required type="date" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
+            </div>
           </div>
           <div className="col-6">
-            <label className="label-premium">Scheduled Time <span style={{ color: '#ef4444' }}>*</span></label>
+            <label className="label-premium">Scheduled Time (Optional)</label>
             <div style={{ position: 'relative' }}>
               <Clock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5, pointerEvents: 'none' }} />
-              <input required type="time" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} />
+              <input type="time" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} />
             </div>
           </div>
 
           <div className="col-12">
             <label className="label-premium">Booking Status</label>
-            <select className="input-premium" style={{ fontWeight: 800, color: 'var(--primary)' }} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
-                <option value="Booked">Booked</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-             </select>
+            <div style={{ position: 'relative' }}>
+              <Activity size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select className="input-premium" style={{ paddingLeft: '2.75rem', fontWeight: 800, color: 'var(--primary)' }} value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})}>
+                  <option value="Booked">Booked</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+               </select>
+            </div>
           </div>
 
           {/* Section 3: Clinical Remarks */}

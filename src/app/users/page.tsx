@@ -30,7 +30,7 @@ export default function UsersPage() {
           showToast('Clinical specialist access revoked.', 'success');
           // Refresh list
           const res = await api.get('/users');
-          setUsers(res.data);
+          setUsers(Array.isArray(res.data) ? res.data : (res.data?.data || []));
         } catch (err) {
           console.error('🚫 Registry Error | Deletion failed:', err);
           showToast('Failed to revoke access. Ensure you have administrative authorization.', 'error');
@@ -65,10 +65,10 @@ export default function UsersPage() {
       const res = await api.get(`/users?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setUsers(res.data.data);
+          setUsers(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setUsers(res.data);
+          setUsers(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -144,6 +144,7 @@ export default function UsersPage() {
           data={users.map(u => ({ ...u, id: u._id }))}
           columns={columns}
           searchPlaceholder="Search by name, email..."
+          onView={(u) => router.push(`/users/${u._id}`)}
           onEdit={(u) => router.push(`/users/${u._id}/edit`)}
           onDelete={handleDeleteUser}
           filterableFields={[

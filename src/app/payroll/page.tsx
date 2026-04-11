@@ -119,10 +119,10 @@ export default function PayrollPage() {
       const res = await api.get(`/payroll/registry?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setRecords(res.data.data);
+          setRecords(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setRecords(res.data);
+          setRecords(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -354,6 +354,7 @@ export default function PayrollPage() {
           data={records.map(r => ({ ...r, id: r._id }))}
           columns={columns}
           searchPlaceholder="Search specialists by name..."
+          onView={(r) => router.push(`/payroll/${r._id}`)}
           filterableFields={[
             { label: 'Payment Status', key: 'paymentStatus' as keyof PayrollRecord, options: ['Paid', 'Pending'] }
           ]}

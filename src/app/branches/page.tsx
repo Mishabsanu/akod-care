@@ -126,7 +126,8 @@ export default function BranchesPage() {
         <DataTable 
           data={branches.map(b => ({ ...b, id: b._id }))}
           columns={columns}
-          searchPlaceholder="Search by site name or location..."
+          searchPlaceholder="Search site registry by name or location..."
+          onView={(b) => router.push(`/branches/${b._id}`)}
           onEdit={(b) => router.push(`/branches/${b._id}/edit`)}
           onDelete={handleDeleteBranch}
           filterableFields={[

@@ -52,10 +52,10 @@ export default function BillingPage() {
       const res = await api.get(`/invoices?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setInvoices(res.data.data);
+          setInvoices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setInvoices(res.data);
+          setInvoices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -110,7 +110,7 @@ export default function BillingPage() {
           showToast('Invoice deleted successfully.', 'success');
           // Refresh
           const res = await api.get('/invoices');
-          setInvoices(res.data);
+          setInvoices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
         } catch (err) {
           console.error('🚫 Ledger Error | Deletion failed:', err);
           showToast('Failed to delete invoice.', 'error');
@@ -187,6 +187,7 @@ export default function BillingPage() {
           data={invoices.map(i => ({ ...i, id: i._id }))}
           columns={columns}
           searchPlaceholder="Search by patient or invoice #..."
+          onView={(i) => router.push(`/billing/${i._id}`)}
           onEdit={(i) => router.push(`/billing/${i._id}/edit`)}
           onDelete={handleDeleteInvoice}
           filterableFields={[

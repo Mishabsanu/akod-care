@@ -26,7 +26,9 @@ export default function AddRolePage() {
     const fetchPerms = async () => {
       try {
         const res = await api.get('/roles/permissions');
-        setAvailablePermissions(res.data);
+        // Handle both object (Registry) and array (Legacy) formats
+        const data = res.data;
+        setAvailablePermissions(data);
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch clinical permissions:', err);
       }

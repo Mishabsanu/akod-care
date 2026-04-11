@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
+import ClinicalSearchSelect from '@/components/ClinicalSearchSelect';
 
 export default function BookAppointmentPage() {
   const router = useRouter();
@@ -38,19 +39,8 @@ export default function BookAppointmentPage() {
     description: ''
   });
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isFieldFocused, setIsFieldFocused] = useState<string | null>(null);
-
-  // -------------------------------------------------------------------
-  // LOGIC | Multi-Identifier Search (Name, Phone, or Patient ID)
-  // -------------------------------------------------------------------
-  const filteredPatients = patients.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.phone && p.phone.includes(searchTerm)) ||
-    (p.patientId && p.patientId.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const selectedPatient = patients.find(p => p._id === formData.patientId);
+  const selectedDoctor = doctors.find(d => d._id === formData.doctorId);
 
   // -------------------------------------------------------------------
   // SYNC | Fetch Clinical Registry Data for Dropdowns
@@ -63,8 +53,8 @@ export default function BookAppointmentPage() {
           api.get('/doctors/dropdown'),
           api.get('/branches')
         ]);
-        setPatients(patientsRes.data);
-        setDoctors(doctorsRes.data);
+        setPatients(Array.isArray(patientsRes.data) ? patientsRes.data : (patientsRes.data?.data || []));
+        setDoctors(Array.isArray(doctorsRes.data) ? doctorsRes.data : (doctorsRes.data?.data || []));
         setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch scheduling options:', err);
@@ -96,7 +86,7 @@ export default function BookAppointmentPage() {
     }
   };
 
-  const isFormValid = formData.patientId && formData.date && formData.time && formData.branch;
+  const isFormValid = formData.patientId && formData.date && formData.branch;
 
   return (
     <div className="book-appointment-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '9rem' }}>
@@ -131,79 +121,35 @@ export default function BookAppointmentPage() {
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
               Patient <span className="gradient-text">Selection</span>
             </h3>
-          </div>
-
-          <div className="col-12" style={{ marginBottom: '2rem' }}>
-            <label className="label-premium" style={{ marginBottom: '0.75rem', display: 'block' }}>Search Clinical Registry <span style={{ color: '#ef4444' }}>*</span></label>
-
-            {!formData.patientId ? (
-              <div style={{ position: 'relative' }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Search size={18} style={{ position: 'absolute', left: '1.25rem', color: 'var(--text-muted)' }} />
-                  <input
-                    type="text"
-                    className="input-premium"
-                    style={{ paddingLeft: '3rem', height: '52px', fontSize: '1rem' }}
-                    placeholder="Search File (Name / Phone / Patient ID)..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                {searchTerm && (
-                  <div className="animate-fade-in" style={{
-                    position: 'absolute',
-                    top: '110%',
-                    left: 0,
-                    right: 0,
-                    zIndex: 100,
-                    background: 'white',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: '0 15px 40px rgba(0,0,0,0.12)',
-                    maxHeight: '280px',
-                    overflowY: 'auto'
-                  }}>
-                    {filteredPatients.map(p => (
-                      <div
-                        key={p._id}
-                        onClick={() => {
-                          setFormData({ ...formData, patientId: p._id });
-                          setSearchTerm('');
-                        }}
-                        className="table-row-hover"
-                        style={{
-                          padding: '1rem 1.5rem',
-                          borderBottom: '1px solid #f1f5f9',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          transition: 'var(--transition-smooth)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
-                              {p.name?.[0]}
-                           </div>
-                           <div>
-                             <span style={{ fontWeight: 700, color: '#0f172a' }}>{p.name}</span>
-                             <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>— {p.phone}</span>
-                           </div>
-                        </div>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', padding: '0.25rem 0.5rem', background: 'rgba(15, 118, 110, 0.05)', borderRadius: '4px' }}>Sync File</span>
-                      </div>
-                    ))}
-                    {filteredPatients.length === 0 && (
-                      <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        No results found. <button type="button" onClick={() => router.push('/patients/add')} style={{ color: 'var(--primary)', fontWeight: 800, textDecoration: 'underline' }}>+ Add Patient</button>
-                      </div>
-                    )}
+                   <div className="col-12" style={{ marginBottom: '2rem' }}>
+            <ClinicalSearchSelect 
+              label="Search Clinical Registry *"
+              options={patients}
+              value={formData.patientId}
+              placeholder="Search File (Name / Phone / Patient ID)..."
+              searchFields={['name', 'phone', 'patientId']}
+              onSelect={(p) => setFormData({ ...formData, patientId: p._id })}
+              onClear={() => setFormData({ ...formData, patientId: '' })}
+              icon={<Search size={18} />}
+              renderOption={(p) => (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
+                      {p.name?.[0]}
+                    </div>
+                    <div>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{p.name}</span>
+                      <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>— {p.phone}</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', padding: '0.25rem 0.5rem', background: 'rgba(15, 118, 110, 0.05)', borderRadius: '4px' }}>Sync File</span>
+                </div>
+              )}
+            />
+
+            {formData.patientId && (
               <div className="animate-fade-in" style={{
+                marginTop: '1.5rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -225,16 +171,10 @@ export default function BookAppointmentPage() {
                     <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Selected Record: {selectedPatient?.phone} • [#{selectedPatient?.patientId || 'N/A'}]</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, patientId: '' })}
-                  style={{ fontSize: '0.75rem', fontWeight: 800, color: '#ef4444', background: 'white', padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-md)', border: '2px solid #ef4444', transition: 'var(--transition-smooth)' }}
-                >
-                  CHANGE FILE
-                </button>
               </div>
             )}
           </div>
+      </div>
 
           {/* Section 2: Clinical Details */}
           <div className="col-12" style={{ 
@@ -255,37 +195,65 @@ export default function BookAppointmentPage() {
 
           <div className="col-4">
             <label className="label-premium">Clinical Category</label>
-            <select className="input-premium" value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
-              <option value="Consultation">Clinical Consultation</option>
-              <option value="Therapy Session">Manual Therapy Session</option>
-              <option value="Follow-up">Diagnostic Follow-up</option>
-              <option value="Rehabilitation">Post-Op Rehabilitation</option>
-            </select>
+            <div style={{ position: 'relative' }}>
+              <ClipboardList size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })}>
+                <option value="Consultation">Clinical Consultation</option>
+                <option value="Therapy Session">Manual Therapy Session</option>
+                <option value="Follow-up">Diagnostic Follow-up</option>
+                <option value="Rehabilitation">Post-Op Rehabilitation</option>
+              </select>
+            </div>
           </div>
           <div className="col-4">
-            <label className="label-premium">Medical Specialist</label>
-            <select className="input-premium" value={formData.doctorId} onChange={(e) => setFormData({ ...formData, doctorId: e.target.value })}>
-              <option value="">Select Specialist (Optional)</option>
-              {doctors.map(d => <option key={d._id} value={d._id}>{d.name} ({d.specialization})</option>)}
-            </select>
+            <ClinicalSearchSelect 
+              label="Medical Specialist"
+              options={doctors}
+              value={formData.doctorId}
+              placeholder="Search Specialist..."
+              searchFields={['name', 'specialization']}
+              onSelect={(d) => setFormData({ ...formData, doctorId: d._id })}
+              onClear={() => setFormData({ ...formData, doctorId: '' })}
+              icon={<Stethoscope size={16} />}
+              renderOption={(d) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.7rem' }}>
+                    {d.name?.[0]}
+                  </div>
+                  <div>
+                    <p style={{ fontWeight: 700, fontSize: '0.85rem', margin: 0 }}>{d.name}</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>{d.specialization}</p>
+                  </div>
+                </div>
+              )}
+            />
           </div>
           {user?.allAccess && (
             <div className="col-4">
               <label className="label-premium">Clinical Site <span style={{ color: '#ef4444' }}>*</span></label>
-              <select required className="input-premium" value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })}>
-                <option value="">Select Branch</option>
-                {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-              </select>
+              <div style={{ position: 'relative' }}>
+                <Building size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                <select required className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })}>
+                  <option value="">Select Branch</option>
+                  {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                </select>
+              </div>
             </div>
           )}
 
           <div className="col-6">
             <label className="label-premium">Scheduled Date <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required type="date" className="input-premium" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
+            <div style={{ position: 'relative' }}>
+              <Calendar size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required type="date" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
+            </div>
           </div>
           <div className="col-6">
-            <label className="label-premium">Scheduled Time <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required type="time" className="input-premium" value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} />
+            <label className="label-premium">Scheduled Time (Optional)</label>
+            <div style={{ position: 'relative' }}>
+              <Clock size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input type="time" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.time} onChange={(e) => setFormData({ ...formData, time: e.target.value })} />
+            </div>
           </div>
 
           {/* Section 3: Conclusion / Remarks */}

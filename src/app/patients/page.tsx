@@ -56,11 +56,11 @@ export default function PatientsPage() {
       
       if (res.data && typeof res.data.total !== 'undefined') {
           // New Paginated Backend
-          setPatients(res.data.data);
+          setPatients(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
           // Fallback to legacy parsing if backend hasn't been updated yet
-          setPatients(res.data);
+          setPatients(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {

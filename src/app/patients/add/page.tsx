@@ -3,6 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
+import { 
+  ArrowLeft, User, Phone, Mail, MapPin, 
+  Activity, Briefcase, Stethoscope, Scale, 
+  Ruler, UserCircle, Smartphone, CheckCircle2,
+  ChevronRight, ClipboardList, Building2
+} from 'lucide-react';
 
 export default function RegisterPatientPage() {
   const router = useRouter();
@@ -13,6 +19,7 @@ export default function RegisterPatientPage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
     age: '',
     gender: 'Male',
     address: '',
@@ -79,16 +86,16 @@ export default function RegisterPatientPage() {
   };
 
   return (
-    <div className="register-patient-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '5rem' }}>
-      <div style={{ marginBottom: '2rem' }}>
+    <div className="register-patient-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '7rem' }}>
+      <div style={{ marginBottom: '3rem' }}>
         <button
           onClick={() => router.back()}
-          style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, background: 'rgba(15, 118, 110, 0.08)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)' }}
         >
-          ← Back to Registry
+          <ArrowLeft size={16} /> Registry Dashboard
         </button>
-        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>New Patient <span className="gradient-text">File</span></h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Initialize a new medical record with standard clinical profiling.</p>
+        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>New Clinical <span className="gradient-text">File</span></h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Initialize a new medical record with standard clinical profiling and vitals.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="clinical-form-card" style={{ opacity: loading ? 0.7 : 1 }}>
@@ -104,20 +111,34 @@ export default function RegisterPatientPage() {
               borderRadius: 'var(--radius-sm)',
               borderLeft: '4px solid var(--primary)'
           }}>
+            <UserCircle size={20} style={{ color: 'var(--primary)' }} />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              👤 Identity & <span className="gradient-text">Contact</span>
+              Identity & <span className="gradient-text">Contact</span>
             </h3>
           </div>
 
           <div className="col-8">
             <label className="label-premium">Patient Full Name <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required disabled={loading} type="text" className="input-premium" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Full legal name..." />
+            <div style={{ position: 'relative' }}>
+              <User size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Full legal name..." />
+            </div>
           </div>
           <div className="col-4">
             <label className="label-premium">Primary Contact <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required disabled={loading} type="text" className="input-premium" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="9876543210" />
+            <div style={{ position: 'relative' }}>
+              <Smartphone size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="9876543210" />
+            </div>
           </div>
 
+          <div className="col-6">
+            <label className="label-premium">Email Address (Optional)</label>
+            <div style={{ position: 'relative' }}>
+              <Mail size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input disabled={loading} type="email" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="patient@example.com" />
+            </div>
+          </div>
           <div className="col-3">
             <label className="label-premium">Age <span style={{ color: '#ef4444' }}>*</span></label>
             <input required disabled={loading} type="number" className="input-premium" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} placeholder="0" />
@@ -130,28 +151,38 @@ export default function RegisterPatientPage() {
               <option value="Other">Other</option>
             </select>
           </div>
-          <div className="col-3">
-            <label className="label-premium">Current Condition</label>
-            <select className="input-premium" value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
-              <option value="New Case">New Case</option>
-              <option value="Stable">Stable</option>
-              <option value="Recovering">Recovering</option>
-              <option value="Critical">Critical</option>
-            </select>
+
+          <div className="col-6">
+            <label className="label-premium">Current Clinical Condition</label>
+            <div style={{ position: 'relative' }}>
+              <Activity size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+                <option value="New Case">New Case</option>
+                <option value="Stable">Stable</option>
+                <option value="Recovering">Recovering</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
           </div>
           {user?.allAccess && (
-            <div className="col-3">
+            <div className="col-6">
               <label className="label-premium">Assigned Branch <span style={{ color: '#ef4444' }}>*</span></label>
-              <select required disabled={loading} className="input-premium" value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })}>
-                <option value="">Select Site</option>
-                {branches?.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-              </select>
+              <div style={{ position: 'relative' }}>
+                <Building2 size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                <select required disabled={loading} className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })}>
+                  <option value="">Select Site</option>
+                  {branches?.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                </select>
+              </div>
             </div>
           )}
 
           <div className="col-12">
             <label className="label-premium">Residential Address <span style={{ color: '#ef4444' }}>*</span></label>
-            <input required disabled={loading} type="text" className="input-premium" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Full physical address..." />
+            <div style={{ position: 'relative' }}>
+              <MapPin size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Full physical address..." />
+            </div>
           </div>
 
           {/* Section 2: Clinical Profiling */}
@@ -172,15 +203,24 @@ export default function RegisterPatientPage() {
 
           <div className="col-4">
             <label className="label-premium">Referred By</label>
-            <input disabled={loading} type="text" className="input-premium" value={formData.referredBy} onChange={(e) => setFormData({ ...formData, referredBy: e.target.value })} placeholder="Physician / Source" />
+            <div style={{ position: 'relative' }}>
+              <Stethoscope size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.referredBy} onChange={(e) => setFormData({ ...formData, referredBy: e.target.value })} placeholder="Physician / Source" />
+            </div>
           </div>
           <div className="col-4">
             <label className="label-premium">Occupation</label>
-            <input disabled={loading} type="text" className="input-premium" value={formData.occupation} onChange={(e) => setFormData({ ...formData, occupation: e.target.value })} placeholder="Profession" />
+            <div style={{ position: 'relative' }}>
+              <Briefcase size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.occupation} onChange={(e) => setFormData({ ...formData, occupation: e.target.value })} placeholder="Profession" />
+            </div>
           </div>
           <div className="col-4">
-            <label className="label-premium">Habits</label>
-            <input disabled={loading} type="text" className="input-premium" value={formData.habits} onChange={(e) => setFormData({ ...formData, habits: e.target.value })} placeholder="Smoking, Alcohol, etc." />
+            <label className="label-premium">Lifestyle Habits</label>
+            <div style={{ position: 'relative' }}>
+              <Activity size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.habits} onChange={(e) => setFormData({ ...formData, habits: e.target.value })} placeholder="Smoking, Alcohol, etc." />
+            </div>
           </div>
 
           <div className="col-12">
@@ -212,15 +252,21 @@ export default function RegisterPatientPage() {
             <div className="clinical-form-grid">
               <div className="col-4">
                 <label className="label-premium" style={{ fontSize: '0.65rem' }}>Weight (KG)</label>
-                <input disabled={loading} type="number" className="input-premium" value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0" />
+                <div style={{ position: 'relative' }}>
+                  <Scale size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                  <input disabled={loading} type="number" className="input-premium" style={{ paddingLeft: '2.25rem' }} value={formData.weight} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} placeholder="0" />
+                </div>
               </div>
               <div className="col-4">
                 <label className="label-premium" style={{ fontSize: '0.65rem' }}>Height (CM)</label>
-                <input disabled={loading} type="number" className="input-premium" value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="0" />
+                <div style={{ position: 'relative' }}>
+                  <Ruler size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+                  <input disabled={loading} type="number" className="input-premium" style={{ paddingLeft: '2.25rem' }} value={formData.height} onChange={(e) => setFormData({ ...formData, height: e.target.value })} placeholder="0" />
+                </div>
               </div>
               <div className="col-4">
                 <label className="label-premium" style={{ fontSize: '0.65rem' }}>BMI (Calculated)</label>
-                <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: '#fff', fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem', textAlign: 'center' }}>
+                <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: '#fff', fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem', textAlign: 'center', boxShadow: 'var(--shadow-sm)' }}>
                   {bmi || '0.00'}
                 </div>
               </div>
@@ -277,11 +323,14 @@ export default function RegisterPatientPage() {
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--primary)',
                 color: 'white',
-                fontWeight: 700,
-                boxShadow: 'var(--shadow-sm)'
+                fontWeight: 900,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)'
               }}
             >
-              {loading ? 'INITIALIZING FILE...' : 'AUTHORIZED REGISTRATION'}
+              {loading ? 'INITIALIZING FILE...' : <><CheckCircle2 size={18} /> AUTHORIZED REGISTRATION</>}
             </button>
           </div>
         </div>

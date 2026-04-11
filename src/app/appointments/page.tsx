@@ -52,10 +52,10 @@ export default function AppointmentsPage() {
       const res = await api.get(`/appointments?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setAppointments(res.data.data);
+          setAppointments(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setAppointments(res.data);
+          setAppointments(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -214,6 +214,7 @@ export default function AppointmentsPage() {
           data={appointments.map(a => ({ ...a, id: a._id }))}
           columns={columns}
           searchPlaceholder="Search scheduler names..."
+          onView={(a) => router.push(`/appointments/${a._id}`)}
           onEdit={(a) => router.push(`/appointments/${a._id}/edit`)}
           onDelete={handleDeleteAppointment}
           filterableFields={[

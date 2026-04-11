@@ -67,7 +67,7 @@ export default function EditUserPage() {
           }
         });
         
-        setRoles(rolesRes.data);
+        setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : (rolesRes.data?.data || []));
         setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch user data:', err);

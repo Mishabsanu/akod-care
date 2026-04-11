@@ -17,7 +17,7 @@ export default function ClinicalWrapper({ children }: { children: React.ReactNod
   // -------------------------------------------------------------------
   useEffect(() => {
     const syncSession = async () => {
-      const token = localStorage.getItem('accessToken');
+      const token = sessionStorage.getItem('accessToken');
       
       if (!token && pathname !== '/login') {
         router.push('/login');

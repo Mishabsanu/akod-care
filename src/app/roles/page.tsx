@@ -106,6 +106,7 @@ export default function RolesPage() {
           data={roles.map(r => ({ ...r, id: r._id }))}
           columns={columns}
           searchPlaceholder="Search by name, description..."
+          onView={(r) => router.push(`/roles/${r._id}`)}
           onEdit={(r) => router.push(`/roles/${r._id}/edit`)}
           onDelete={handleDelete}
           filterableFields={[

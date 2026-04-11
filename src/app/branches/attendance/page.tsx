@@ -38,8 +38,8 @@ export default function AttendancePage() {
           api.get('/attendance'),
           api.get('/users') // Managers can see staff via branchGuard
         ]);
-        setRecords(recordsRes.data);
-        setStaff(staffRes.data);
+        setRecords(Array.isArray(recordsRes.data) ? recordsRes.data : (recordsRes.data?.data || []));
+        setStaff(Array.isArray(staffRes.data) ? staffRes.data : (staffRes.data?.data || []));
       } catch (err) {
         console.error('🚫 Operational Error | Failed to fetch attendance:', err);
       } finally {

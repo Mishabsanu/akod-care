@@ -33,7 +33,7 @@ export default function ServicesPage() {
           showToast('Clinical service successfully removed.', 'success');
           // Refresh list
           const res = await api.get('/services');
-          setServices(res.data);
+          setServices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
         } catch (err) {
           console.error('🚫 Registry Error | Deletion failed:', err);
           showToast('Failed to remove service. Check for linked clinical records.', 'error');
@@ -68,10 +68,10 @@ export default function ServicesPage() {
       const res = await api.get(`/services?${params.toString()}`);
       
       if (res.data && typeof res.data.total !== 'undefined') {
-          setServices(res.data.data);
+          setServices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.total);
       } else {
-          setServices(res.data);
+          setServices(Array.isArray(res.data) ? res.data : (res.data?.data || []));
           setTotalRecords(res.data.length);
       }
     } catch (err) {
@@ -140,6 +140,7 @@ export default function ServicesPage() {
           data={services.map(s => ({ ...s, id: s._id }))} // Adapt Mongoose _id to DataTable id
           columns={columns}
           searchPlaceholder="Search by service name..."
+          onView={(s) => router.push(`/services/${s._id}`)}
           onEdit={(s) => router.push(`/services/${s._id}/edit`)}
           onDelete={handleDeleteService}
           filterableFields={[

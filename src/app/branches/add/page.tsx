@@ -1,6 +1,7 @@
 'use client'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Building2, MapPin, Phone, Users, Shield, CheckCircle2, ArrowLeft } from 'lucide-react';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
 
@@ -32,42 +33,91 @@ export default function AddBranchPage() {
   };
 
   return (
-    <div className="add-branch-container animate-fade-in" style={{ maxWidth: '800px' }}>
+    <div className="add-branch-container animate-fade-in clinical-form-wide" style={{ paddingBottom: '7rem' }}>
       <div style={{ marginBottom: '2rem' }}>
         <button
           onClick={() => router.back()}
-          style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, background: 'rgba(15, 118, 110, 0.08)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)' }}
         >
-          ← Back to Network
+          <ArrowLeft size={16} /> Network Infrastructure
         </button>
-        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>Initialize <span className="gradient-text">Branch</span></h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Establish a new clinical site and configure its operational parameters.</p>
+        <h1 style={{ fontSize: '1.8rem', letterSpacing: '-0.01em' }}>Initialize Clinical <span className="gradient-text">Branch</span></h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Establish a new physical clinical site and configure its core operational parameters.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="card" style={{ padding: '2.5rem', opacity: loading ? 0.7 : 1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Full Branch Name</label>
-            <input required disabled={loading} type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Pune East Center" style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+      <form onSubmit={handleSubmit} className="clinical-form-card" style={{ opacity: loading ? 0.7 : 1 }}>
+        <div className="clinical-form-grid">
+          <div className="col-12">
+            <label className="label-premium">Full Branch Name <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Building2 size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Pune East Center" />
+            </div>
           </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Operational Address</label>
-            <input required disabled={loading} type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Full physical location details..." style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+
+          <div className="col-12">
+            <label className="label-premium">Operational Address <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <MapPin size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Full physical location details..." />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Contact Number</label>
-            <input required disabled={loading} type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+
+          <div className="col-6">
+            <label className="label-premium">Contact Number <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Phone size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="text" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+            </div>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Staff Capacity</label>
-            <input required disabled={loading} type="number" value={formData.staffCount} onChange={(e) => setFormData({ ...formData, staffCount: e.target.value })} placeholder="0" style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: 'white' }} />
+
+          <div className="col-6">
+            <label className="label-premium">Staff Capacity <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Users size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <input required disabled={loading} type="number" className="input-premium" style={{ paddingLeft: '2.75rem' }} value={formData.staffCount} onChange={(e) => setFormData({ ...formData, staffCount: e.target.value })} placeholder="0" />
+            </div>
+          </div>
+
+          <div className="col-12">
+            <label className="label-premium">Initial Operational Status <span style={{ color: '#ef4444' }}>*</span></label>
+            <div style={{ position: 'relative' }}>
+              <Shield size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', opacity: 0.5 }} />
+              <select required disabled={loading} className="input-premium" style={{ paddingLeft: '2.75rem', fontWeight: 800, color: 'var(--primary)' }} value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+                 <option value="Active">Authorized / Active</option>
+                 <option value="Inactive">Temporary Deactivation</option>
+                 <option value="Setup In-Progress">Setup In-Progress</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-          <button type="button" disabled={loading} onClick={() => router.back()} style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 600 }}>Cancel</button>
-          <button type="submit" disabled={loading} style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', background: 'var(--primary)', color: 'white', fontWeight: 600 }}>
-            {loading ? 'Archiving Registration...' : 'Authorize Branch'}
+        {/* Action Row */}
+        <div style={{ display: 'flex', gap: '1.25rem', justifyContent: 'flex-end', marginTop: '4rem' }}>
+          <button 
+            type="button" 
+            disabled={loading} 
+            onClick={() => router.back()} 
+            style={{ padding: '0.85rem 2rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontWeight: 700, background: 'white', color: 'var(--text-muted)' }}
+          >
+            CANCEL
+          </button>
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ 
+                padding: '0.85rem 2.5rem', 
+                borderRadius: 'var(--radius-md)', 
+                background: 'var(--primary)', 
+                color: 'white', 
+                fontWeight: 900, 
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 10px 20px -5px rgba(13, 148, 136, 0.4)' 
+            }}
+          >
+            {loading ? 'SYNCHRONIZING...' : <><CheckCircle2 size={18} /> AUTHORIZE BRANCH</>}
           </button>
         </div>
       </form>

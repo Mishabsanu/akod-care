@@ -122,6 +122,7 @@ export default function DoctorsPage() {
           data={doctors.map(d => ({ ...d, id: d._id }))}
           columns={columns}
           searchPlaceholder="Search specialists by name or category..."
+          onView={(d) => router.push(`/doctors/${d._id}`)}
           onEdit={(d) => router.push(`/doctors/${d._id}/edit`)}
           onDelete={handleDeleteDoctor}
         />

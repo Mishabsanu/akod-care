@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/services/api';
 import { usePCMSStore } from '@/store/useStore';
+import ClinicalSearchSelect from '@/components/ClinicalSearchSelect';
 import { ChevronRight, Printer, Save, Trash2, Plus, Info, Calendar, Search, UserCheck, User, MapPin, Phone, ShieldCheck } from 'lucide-react';
 
 export default function GenerateInvoicePage() {
@@ -36,10 +37,10 @@ export default function GenerateInvoicePage() {
     const fetchData = async () => {
       try {
         // Fetch independently to avoid "Cascade Failure" if one registry is slow
-        const getPatients = api.get('/patients/dropdown').then(res => setPatients(res.data)).catch(e => console.error('Pt Error', e));
+        const getPatients = api.get('/patients/dropdown').then(res => setPatients(Array.isArray(res.data) ? res.data : (res.data?.data || []))).catch(e => console.error('Pt Error', e));
         const getBranches = api.get('/branches').then(res => setBranches(Array.isArray(res.data) ? res.data : (res.data?.data || []))).catch(e => console.error('Br Error', e));
-        const getServices = api.get('/services').then(res => setServices(res.data)).catch(e => console.error('Svc Error', e));
-        const getInventory = api.get('/inventory').then(res => setInventory(res.data)).catch(e => console.error('Inv Error', e));
+        const getServices = api.get('/services').then(res => setServices(Array.isArray(res.data) ? res.data : (res.data?.data || []))).catch(e => console.error('Svc Error', e));
+        const getInventory = api.get('/inventory').then(res => setInventory(Array.isArray(res.data) ? res.data : (res.data?.data || []))).catch(e => console.error('Inv Error', e));
 
         await Promise.all([getPatients, getBranches, getServices, getInventory]);
       } catch (err) {
@@ -58,7 +59,7 @@ export default function GenerateInvoicePage() {
   const handleItemSelect = (idx: number, item: any, type: 'service' | 'product') => {
     const newItems = [...formData.items];
     newItems[idx].name = item.name;
-    
+
     if (type === 'service') {
       newItems[idx].price = item.price;
       newItems[idx].serviceId = item._id;
@@ -68,7 +69,7 @@ export default function GenerateInvoicePage() {
       newItems[idx].inventoryId = item._id;
       newItems[idx].serviceId = '';
     }
-    
+
     setFormData({ ...formData, items: newItems });
     setActiveSearchRow(null);
     setItemSearch('');
@@ -134,19 +135,11 @@ export default function GenerateInvoicePage() {
     }
   };
 
-  const filteredPatients = patients.filter(p =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.phone && p.phone.includes(searchTerm)) ||
-    (p.patientId && p.patientId.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   const selectedPatient = patients.find(p => p._id === formData.patientId);
   const selectedBranch = branches.find(b => b._id === formData.branch);
 
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '5rem' }}>
-
-      {/* Refined Header */}
       <div style={{ marginBottom: '3rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <button
@@ -174,10 +167,7 @@ export default function GenerateInvoicePage() {
       <form onSubmit={handleSubmit} style={{ opacity: loading ? 0.7 : 1 }}>
         {!showPreview ? (
           <div className="clinical-form-grid">
-
-            {/* LEFT COLUMN: Patient & Items */}
             <div className="col-8">
-              {/* PATIENT SELECTION */}
               <div className="clinical-form-card" style={{ padding: '2.5rem', marginBottom: '2.5rem' }}>
                 <div style={{
                   marginBottom: '2rem',
@@ -195,74 +185,34 @@ export default function GenerateInvoicePage() {
                   </h3>
                 </div>
 
-                {!formData.patientId ? (
-                  <div style={{ position: 'relative' }}>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <Search size={18} style={{ position: 'absolute', left: '1.25rem', color: 'var(--text-muted)' }} />
-                      <input
-                        type="text"
-                        className="input-premium"
-                        style={{ paddingLeft: '3rem', height: '52px', borderRadius: 'var(--radius-md)', fontSize: '1rem' }}
-                        placeholder="Search clinical files (Name, Phone or Patient ID)..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-
-                    {searchTerm && (
-                      <div className="glass-premium animate-fade-in" style={{
-                        position: 'absolute',
-                        top: '120%',
-                        left: 0,
-                        right: 0,
-                        zIndex: 100,
-                        borderRadius: 'var(--radius-md)',
-                        maxHeight: '320px',
-                        overflowY: 'auto',
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-                        border: '1px solid var(--border-subtle)'
-                      }}>
-                        {filteredPatients.map(p => (
-                          <div
-                            key={p._id}
-                            onClick={() => {
-                              setFormData({ ...formData, patientId: p._id });
-                              setSearchTerm('');
-                            }}
-                            className="table-row-hover"
-                            style={{
-                              padding: '1.25rem 1.5rem',
-                              borderBottom: '1px solid var(--border-subtle)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              transition: 'var(--transition-smooth)'
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                                {p.name?.[0]}
-                              </div>
-                              <div>
-                                <p style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>{p.name}</p>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>{p.phone} • [#{p.patientId || 'N/A'}]</p>
-                              </div>
-                            </div>
-                            <ChevronRight size={18} style={{ color: 'var(--primary-light)', opacity: 0.5 }} />
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <ClinicalSearchSelect
+                    label="Search Clinical Registry *"
+                    options={patients}
+                    value={formData.patientId}
+                    placeholder="Search clinical files (Name, Phone or Patient ID)..."
+                    searchFields={['name', 'phone', 'patientId']}
+                    onSelect={(p) => setFormData({ ...formData, patientId: p._id })}
+                    onClear={() => setFormData({ ...formData, patientId: '' })}
+                    icon={<Search size={18} />}
+                    renderOption={(p) => (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                            {p.name?.[0]}
                           </div>
-                        ))}
-                        {searchTerm && filteredPatients.length === 0 && (
-                          <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📂</div>
-                            <p style={{ fontWeight: 600 }}>No clinical file found matching your search.</p>
-                            <button type="button" onClick={() => router.push('/patients/add')} style={{ color: 'var(--primary)', fontWeight: 800, marginTop: '0.5rem', textDecoration: 'underline' }}>Initialize New File</button>
+                          <div>
+                            <p style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '1rem' }}>{p.name}</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>{p.phone} • [#{p.patientId || 'N/A'}]</p>
                           </div>
-                        )}
+                        </div>
+                        <ChevronRight size={18} style={{ color: 'var(--primary-light)', opacity: 0.5 }} />
                       </div>
                     )}
-                  </div>
-                ) : (
+                  />
+                </div>
+
+                {formData.patientId && (
                   <div className="animate-fade-in" style={{
                     background: 'white',
                     padding: '1.75rem',
@@ -272,7 +222,8 @@ export default function GenerateInvoicePage() {
                     display: 'grid',
                     gridTemplateColumns: '1fr auto',
                     gap: '2rem',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    marginTop: '1.5rem'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                       <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.5rem', boxShadow: '0 8px 16px rgba(15, 118, 110, 0.2)' }}>
@@ -301,19 +252,11 @@ export default function GenerateInvoicePage() {
                           </select>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, patientId: '' })}
-                        style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.02em', textDecoration: 'underline', cursor: 'pointer', marginTop: user?.allAccess ? 0 : '1rem' }}
-                      >
-                        CHANGE CLINICAL FILE
-                      </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* LEDGER ITEMS */}
               <div className="clinical-form-card" style={{ padding: '2.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                   <div style={{
@@ -365,7 +308,7 @@ export default function GenerateInvoicePage() {
                                 setFormData({ ...formData, items: newItems });
                               }}
                             />
-                            
+
                             {activeSearchRow === idx && (
                               <div className="glass-premium animate-fade-in" style={{
                                 position: 'absolute',
@@ -380,14 +323,8 @@ export default function GenerateInvoicePage() {
                                 border: '1px solid var(--border-subtle)',
                                 background: 'white'
                               }}>
-                                {/* Services Section */}
                                 {services.filter(s => !itemSearch || s.name.toLowerCase().includes(itemSearch.toLowerCase())).map(s => (
-                                  <div 
-                                    key={s._id} 
-                                    onClick={() => handleItemSelect(idx, s, 'service')}
-                                    className="table-row-hover"
-                                    style={{ padding: '0.8rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                  >
+                                  <div key={s._id} onClick={() => handleItemSelect(idx, s, 'service')} className="table-row-hover" style={{ padding: '0.8rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                       <ShieldCheck size={14} style={{ color: 'var(--primary)' }} />
                                       <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{s.name}</span>
@@ -395,44 +332,18 @@ export default function GenerateInvoicePage() {
                                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)' }}>₹{s.price}</span>
                                   </div>
                                 ))}
-
-                                {/* Products Section */}
                                 {inventory.filter(i => !itemSearch || i.name.toLowerCase().includes(itemSearch.toLowerCase())).map(i => (
-                                  <div 
-                                    key={i._id} 
-                                    onClick={() => i.quantity > 0 && handleItemSelect(idx, i, 'product')}
-                                    className="table-row-hover"
-                                    style={{ 
-                                        padding: '0.8rem 1rem', 
-                                        cursor: i.quantity > 0 ? 'pointer' : 'not-allowed', 
-                                        borderBottom: '1px solid var(--border-subtle)', 
-                                        display: 'flex', 
-                                        justifyContent: 'space-between', 
-                                        alignItems: 'center',
-                                        opacity: i.quantity <= 0 ? 0.5 : 1
-                                    }}
-                                  >
+                                  <div key={i._id} onClick={() => i.quantity > 0 && handleItemSelect(idx, i, 'product')} className="table-row-hover" style={{ padding: '0.8rem 1rem', cursor: i.quantity > 0 ? 'pointer' : 'not-allowed', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: i.quantity <= 0 ? 0.5 : 1 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                       <Plus size={14} style={{ color: '#ec4899' }} />
                                       <div>
                                         <p style={{ fontWeight: 600, fontSize: '0.85rem', margin: 0 }}>{i.name}</p>
-                                        <p style={{ fontSize: '0.65rem', color: i.quantity <= i.reorderLevel ? '#ef4444' : 'var(--text-muted)', margin: 0 }}>
-                                            {i.quantity > 0 ? `Stock: ${i.quantity} ${i.unit}` : 'OUT OF STOCK'}
-                                        </p>
+                                        <p style={{ fontSize: '0.65rem', color: i.quantity <= i.reorderLevel ? '#ef4444' : 'var(--text-muted)', margin: 0 }}>{i.quantity > 0 ? `Stock: ${i.quantity} ${i.unit}` : 'OUT OF STOCK'}</p>
                                       </div>
                                     </div>
                                     <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary)' }}>₹{i.salePrice || i.pricePerUnit}</span>
                                   </div>
                                 ))}
-
-                                {itemSearch && !services.some(s => s.name.toLowerCase().includes(itemSearch.toLowerCase())) && !inventory.some(i => i.name.toLowerCase().includes(itemSearch.toLowerCase())) && (
-                                    <div 
-                                        onClick={() => setActiveSearchRow(null)}
-                                        style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', cursor: 'pointer' }}
-                                    >
-                                        ✨ Use "{itemSearch}" as custom description
-                                    </div>
-                                )}
                               </div>
                             )}
                           </div>
@@ -456,11 +367,7 @@ export default function GenerateInvoicePage() {
                         </td>
                         <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
                           {formData.items.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => setFormData({ ...formData, items: formData.items.filter((_, i) => i !== idx) })}
-                              style={{ color: '#94a3b8' }}
-                            >
+                            <button type="button" onClick={() => setFormData({ ...formData, items: formData.items.filter((_, i) => i !== idx) })} style={{ color: '#94a3b8' }}>
                               <Trash2 size={18} />
                             </button>
                           )}
@@ -472,86 +379,44 @@ export default function GenerateInvoicePage() {
 
                 <div style={{ marginTop: '2rem' }}>
                   <label className="label-premium">Remarks / Notes</label>
-                  <textarea
-                    className="textarea-premium"
-                    style={{ minHeight: '80px', fontSize: '0.9rem' }}
-                    placeholder="Add internal notes or payment terms..."
-                    value={formData.remarks}
-                    onChange={(e) => setFormData({ ...formData, remarks: e.target.value })}
-                  />
+                  <textarea className="textarea-premium" style={{ minHeight: '80px', fontSize: '0.9rem' }} placeholder="Add internal notes or payment terms..." value={formData.remarks} onChange={(e) => setFormData({ ...formData, remarks: e.target.value })} />
                 </div>
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Summary & Action */}
             <div className="col-4">
               <div style={{ position: 'sticky', top: '2rem' }}>
                 <div className="card-premium" style={{ padding: '2rem', background: 'var(--bg-sidebar)', color: 'white' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '2rem', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.8 }}>Order Summary</h3>
-
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.7 }}>
                     <span>Subtotal</span>
                     <span>₹{(formData.amount + formData.discount).toLocaleString()}</span>
                   </div>
-
                   <div style={{ marginBottom: '1.5rem' }}>
                     <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', opacity: 0.7 }}>Adjustment / Discount</label>
                     <div style={{ position: 'relative' }}>
                       <span style={{ position: 'absolute', left: '0.75rem', top: '0.6rem', color: 'var(--text-muted)' }}>-₹</span>
-                      <input
-                        type="number"
-                        className="input-premium"
-                        style={{ paddingLeft: '2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: 'var(--radius-sm)' }}
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
-                      />
+                      <input type="number" className="input-premium" style={{ paddingLeft: '2rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', borderRadius: 'var(--radius-sm)' }} value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })} />
                     </div>
                   </div>
-
                   <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                       <div>
                         <p style={{ fontSize: '0.75rem', fontWeight: 600, opacity: 0.6, marginBottom: '0.25rem' }}>Total Amount</p>
-                        <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary-light)' }}>
-                          ₹{formData.amount.toLocaleString()}
-                        </p>
+                        <p style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--primary-light)' }}>₹{formData.amount.toLocaleString()}</p>
                       </div>
                       <div style={{ padding: '0.5rem', background: 'rgba(20, 184, 166, 0.1)', borderRadius: 'var(--radius-sm)' }}>
                         <Save size={24} style={{ color: 'var(--primary-light)' }} />
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading || !formData.patientId}
-                    style={{
-                      width: '100%',
-                      marginTop: '2rem',
-                      padding: '1rem',
-                      borderRadius: 'var(--radius-md)',
-                      background: 'var(--primary)',
-                      color: 'white',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.75rem',
-                      fontSize: '1rem',
-                      opacity: !formData.patientId ? 0.3 : 1,
-                      cursor: !formData.patientId ? 'not-allowed' : 'pointer'
-                    }}
-                  >
+                  <button type="submit" disabled={loading || !formData.patientId} style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: 'var(--radius-md)', background: 'var(--primary)', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', fontSize: '1rem', opacity: !formData.patientId ? 0.3 : 1, cursor: !formData.patientId ? 'not-allowed' : 'pointer' }}>
                     {loading ? 'Processing...' : <><ChevronRight size={18} /> Continue to Review</>}
                   </button>
                 </div>
-
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1.5rem' }}>
-                  Verify all items before proceeding to authorization.
-                </p>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1.5rem' }}>Verify all items before proceeding to authorization.</p>
               </div>
             </div>
-
           </div>
         ) : (
           <div className="animate-fade-in" style={{ background: '#f1f5f9', padding: '4rem 2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -577,7 +442,6 @@ export default function GenerateInvoicePage() {
               display: 'flex',
               flexDirection: 'column'
             }}>
-              {/* Minimalist Letterhead Header */}
               <div style={{ padding: '3rem 4rem', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
@@ -604,7 +468,6 @@ export default function GenerateInvoicePage() {
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>Invoice Reference</p>
                     <p style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--primary)', marginBottom: '1.5rem' }}>#INV-DRFT</p>
-
                     <p style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem', letterSpacing: '0.05em' }}>Date of Issue</p>
                     <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>{new Date(formData.date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                   </div>
@@ -612,7 +475,6 @@ export default function GenerateInvoicePage() {
               </div>
 
               <div style={{ padding: '3rem 4rem' }}>
-                {/* Billed To Section (Minimalist) */}
                 <div style={{ marginBottom: '3.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '3rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                   <div>
                     <p style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.75rem', letterSpacing: '0.1em' }}>Bill To</p>
@@ -631,7 +493,6 @@ export default function GenerateInvoicePage() {
                   </div>
                 </div>
 
-                {/* Table Section */}
                 <div style={{ marginBottom: '3.5rem' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
@@ -655,7 +516,6 @@ export default function GenerateInvoicePage() {
                   </table>
                 </div>
 
-                {/* Footer / Totals Section (Minimalist) */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '4rem', marginTop: '1.5rem' }}>
                   <div>
                     {formData.remarks && (

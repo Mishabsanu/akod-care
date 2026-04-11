@@ -1,8 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
+import { Edit, Activity, Info } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import api from '@/services/api';
 import PermissionMatrix from '@/components/PermissionMatrix';
+import { usePCMSStore } from '@/store/useStore';
 
 /**
  * 🛡️ EditRolePage | Dynamic Role Re-Architect
@@ -11,6 +13,7 @@ import PermissionMatrix from '@/components/PermissionMatrix';
 export default function EditRolePage() {
   const router = useRouter();
   const { id } = useParams();
+  const { user, showToast } = usePCMSStore();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [availablePermissions, setAvailablePermissions] = useState<any>(null);
@@ -28,9 +31,10 @@ export default function EditRolePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const roleId = Array.isArray(id) ? id[0] : id;
         const [permsRes, roleRes] = await Promise.all([
           api.get('/roles/permissions'),
-          api.get(`/roles/${id}`)
+          api.get(`/roles/${roleId}`)
         ]);
         
         setAvailablePermissions(permsRes.data);
@@ -43,28 +47,31 @@ export default function EditRolePage() {
         });
       } catch (err) {
         console.error('🚫 Registry Error | Failed to fetch clinical role data:', err);
+        showToast('Failed to load role parameters.', 'error');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [id]);
+  }, [id, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.allAccess && formData.permissions.length === 0) {
-      alert('⚠️ Security Warning | Please select at least one permission or enable Full Access.');
+      showToast('⚠️ Security Warning | Please select at least one permission or enable Full Access.', 'error');
       return;
     }
 
     setSubmitting(true);
     try {
-      await api.put(`/roles/${id}`, formData);
+      const roleId = Array.isArray(id) ? id[0] : id;
+      await api.put(`/roles/${roleId}`, formData);
+      showToast('Clinical role updated successfully.', 'success');
       router.push('/roles');
     } catch (err) {
       console.error('🚫 Registry Error | Failed to update clinical role:', err);
-      alert('Role update failed. Please check medical data.');
+      showToast('Role update failed. Please check medical data.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -73,18 +80,21 @@ export default function EditRolePage() {
   if (loading) {
       return (
         <div style={{ textAlign: 'center', padding: '10rem 2rem', color: 'var(--text-muted)' }}>
-          <div className="animate-pulse">🛡️ Accessing Dynamic Security Vault...</div>
+          <div className="animate-pulse font-bold tracking-widest text-xs">🛡️ ACCESSING DYNAMIC SECURITY VAULT...</div>
         </div>
       );
   }
 
+  const isSuperAdmin = !!user?.allAccess;
+  const canModifyProtected = isSuperAdmin || !formData.isSystemRole;
+
   return (
-    <div className="edit-role-container animate-fade-in" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+    <div className="edit-role-container animate-fade-in clinical-form-wide">
       <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
             <button 
               onClick={() => router.back()} 
-              style={{ marginBottom: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ marginBottom: '1.5rem', color: 'var(--primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, background: 'rgba(15, 118, 110, 0.08)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer' }}
             >
               ← Back to Registry
             </button>
@@ -102,16 +112,16 @@ export default function EditRolePage() {
                 <div style={{ fontSize: '0.85rem', color: formData.allAccess ? 'var(--primary)' : 'var(--text-muted)' }}>{formData.allAccess ? 'Absolute Access Enabled' : 'Modular Access Only'}</div>
             </div>
             <div 
-                onClick={() => !formData.isSystemRole && setFormData({ ...formData, allAccess: !formData.allAccess })}
+                onClick={() => canModifyProtected && setFormData({ ...formData, allAccess: !formData.allAccess })}
                 style={{ 
                     width: '50px', 
                     height: '26px', 
                     background: formData.allAccess ? 'var(--primary)' : '#cbd5e1', 
                     borderRadius: '20px', 
                     position: 'relative', 
-                    cursor: formData.isSystemRole ? 'not-allowed' : 'pointer',
+                    cursor: canModifyProtected ? 'pointer' : 'not-allowed',
                     transition: 'var(--transition-smooth)',
-                    opacity: formData.isSystemRole ? 0.6 : 1
+                    opacity: canModifyProtected ? 1 : 0.6
                 }}
             >
                 <div style={{ 
@@ -137,13 +147,17 @@ export default function EditRolePage() {
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)' }}>Role Name</label>
                     <input 
                       required 
-                      disabled={submitting || formData.isSystemRole} 
+                      disabled={submitting || !canModifyProtected} 
                       type="text" 
                       value={formData.name} 
                       onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                      style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: formData.isSystemRole ? '#f8fafc' : 'white', fontWeight: 600, fontSize: '1rem', outline: 'none' }} 
+                      style={{ width: '100%', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', background: !canModifyProtected ? '#f8fafc' : 'white', fontWeight: 600, fontSize: '1rem', outline: 'none' }} 
                     />
-                    {formData.isSystemRole && <p style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 800 }}>🛡️ SYSTEM PROTECTED ROLE</p>}
+                    {formData.isSystemRole && (
+                      <p style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 800 }}>
+                        🛡️ SYSTEM ROLE {isSuperAdmin ? '(SUPER-ADMIN UNLOCKED)' : '(READ-ONLY)'}
+                      </p>
+                    )}
                 </div>
                 <div>
                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, marginBottom: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)' }}>Clinical Scope / Description</label>
@@ -172,6 +186,15 @@ export default function EditRolePage() {
             </span>
           </div>
         </div>
+
+        {formData.allAccess && (
+          <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(15, 118, 110, 0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--primary)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Info size={18} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary-dark)' }}>
+              Modular permissions are currently <strong>locked</strong> because Absolute Access (Full Bypass) is enabled for this role.
+            </span>
+          </div>
+        )}
 
         {availablePermissions ? (
             <PermissionMatrix 
